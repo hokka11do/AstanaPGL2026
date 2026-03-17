@@ -1,0 +1,13 @@
+[project]
+name = "pgl-astana-2026-website"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.13.3",
+    "dotenv>=0.9.9",
+    "fastapi>=0.135.1",
+    "redis>=7.3.0",
+    "sqlalchemy>=2.0.48",
+]
