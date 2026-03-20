@@ -15,6 +15,7 @@ class RegionEnum(str, Enum):
     SA = "SA"
     ASIA = "ASIA"
     OCE = 'OCE'
+    MENA = 'MENA'
 
 
 class Team(Base):
