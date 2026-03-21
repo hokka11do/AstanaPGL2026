@@ -133,6 +133,8 @@ async def seed():
         updated_count = 0
 
         for team in teams:
+            team.logo_url = f'/static/logos/{team.slug}.png'
+
             existing_team = await s.scalar(
                 select(Team).where(Team.slug == team.slug)
             )
@@ -142,7 +144,6 @@ async def seed():
                 created_count += 1
             else:
                 existing_team.logo_url = team.logo_url
-                existing_team.description = team.description
                 existing_team.country_code = team.country_code
                 existing_team.region = team.region
                 existing_team.short_name = team.short_name
