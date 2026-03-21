@@ -8,7 +8,7 @@ from src.database.models.teams import Base
 
 class PlayerRoleEnum(str, Enum):
     RIFLER = "rifler"
-    AWPER = "awper"
+    SNIPER = "sniper"
     IGL = "igl"
     SUPPORT = "support"
     ENTRY = "entry"
