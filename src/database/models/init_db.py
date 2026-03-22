@@ -1,4 +1,5 @@
-from src.database.models.teams import Team , Base
+from src.database.models.teams import Team, Base
+from src.database.models.players import Player
 from src.database.database import engine
 import asyncio
 
