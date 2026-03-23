@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Mapped , mapped_column , DeclarativeBase
+from sqlalchemy.orm import Mapped , mapped_column , DeclarativeBase, relationship
 from sqlalchemy import ForeignKey, String, Integer, Boolean, DateTime, func
 from datetime import datetime
 from enum import Enum
@@ -35,3 +35,5 @@ class Team(Base):
 
     is_active: Mapped[bool] = mapped_column(Boolean , default=True) # Активна/Неактивна
     created_at : Mapped[datetime] = mapped_column(DateTime , server_default=func.now()) # Когда создана
+
+    players = relationship('Player', back_populates='team')
