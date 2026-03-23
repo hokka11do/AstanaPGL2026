@@ -2,6 +2,7 @@ import asyncio
 from sqlalchemy import select
 from src.database.database import session
 from src.database.models.players import Player , PlayerRoleEnum
+from src.database.models.teams import Team
 
 
 main_players = {
@@ -703,11 +704,11 @@ main_players = {
 }
 
 
-async def sync_players(teams):
+async def sync_players(teams, s):
     for team in teams:
         new_players = main_players.get(team.slug, [])
 
-        result = await session.execute(
+        result = await s.execute(
             select(Player).where(Player.team_id == team.id)
         )
         db_players = result.scalars().all()
@@ -726,10 +727,23 @@ async def sync_players(teams):
             else:
                 new_player.team_id = team.id
                 new_player.is_active = True
-                session.add(new_player)
+                s.add(new_player)
 
         for db_player in db_players:
             if db_player.nickname not in new_nicknames:
                 db_player.is_active = False
 
-    await session.commit()
+    await s.commit()
+
+
+async def main():
+    async with session() as s:
+        result = await s.execute(select(Team))
+        teams = result.scalars().all()
+
+        await sync_players(teams, s)
+
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
