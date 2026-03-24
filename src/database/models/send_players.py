@@ -412,7 +412,7 @@ main_players = {
         ),
     ],
 
-    'aurora-gaming': [
+    'aurora': [
         Player(
             nickname="MAJ3R",
             real_name="Энгин Кюпели",
@@ -705,27 +705,35 @@ main_players = {
 
 
 async def sync_players(teams, s):
+
     for team in teams:
         new_players = main_players.get(team.slug, [])
+        team_id = team.id
+        print(f'team.slug: {team.slug} , team_id: {team_id} , team.id: {team.id}')
 
-        result = await s.execute(
-            select(Player).where(Player.team_id == team.id)
-        )
+        result = await s.execute(select(Player).where(Player.team_id == team.id))
         db_players = result.scalars().all()
 
-        db_players_map = {p.nickname: p for p in db_players}
         new_nicknames = {player.nickname for player in new_players}
 
+
         for new_player in new_players:
-            existing = db_players_map.get(new_player.nickname)
+
+            result = await s.execute(
+                select(Player).where(Player.nickname == new_player.nickname)
+            )
+            existing = result.scalar_one_or_none()
 
             if existing:
+                existing.team_id = team_id
                 existing.real_name = new_player.real_name
                 existing.country_code = new_player.country_code
                 existing.role = new_player.role
+                existing.photo_url = f'/static/photos/{team.slug}/{existing.nickname}.png'
                 existing.is_active = True
             else:
-                new_player.team_id = team.id
+                new_player.team_id = team_id
+                new_player.photo_url = f'/static/photos/{team.slug}/{new_player.nickname}.png'
                 new_player.is_active = True
                 s.add(new_player)
 
@@ -733,6 +741,7 @@ async def sync_players(teams, s):
             if db_player.nickname not in new_nicknames:
                 db_player.is_active = False
 
+    
     await s.commit()
 
 
