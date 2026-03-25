@@ -4,6 +4,7 @@ from datetime import datetime
 from enum import Enum
 from sqlalchemy import Enum as SAEnum
 from src.database.models.teams import Base
+from sqlalchemy import Text
 
 
 class PlayerRoleEnum(str, Enum):
@@ -28,6 +29,8 @@ class Player(Base):
         SAEnum(PlayerRoleEnum),
         nullable=True
     )
+
+    description : Mapped[str | None] = mapped_column(Text , nullable=True)
 
     photo_url: Mapped[str] = mapped_column(String, nullable=True)
 
