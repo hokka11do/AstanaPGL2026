@@ -16,6 +16,7 @@ async def get_teams(ses: SessionDep):
     teams = result.scalars().all()
     return [
         {'name' : team.name,
+         'slug' : team.slug,
          'country_code' : team.country_code,
          'short_name' : team.short_name,
          'region' : team.region,
@@ -36,21 +37,22 @@ async def get_team(team_slug , ses: SessionDep):
         'name' : team.name,
         'slug' : team.slug,
         'country_code' : team.country_code,
-        'flag_url' : f'/static/photos/{team.country_code.lower()}.svg',
+        'flag_url' : f'/static/flags/{team.country_code.lower()}.svg',
         'region' : team.region,
         'logo_url' : team.logo_url,
         'description' : team.description
     }
 
-@router.get('/players/{nickname}')
-async def get_player_in_window(nickname , ses: SessionDep):
-    result = await ses.execute(select(Player).options(selectinload(Player.team)).where(Player.nickname == nickname))
-    player = result.scalar_one_or_none()
+@router.get('/teams/{team_slug}/players')
+async def get_team_players(team_slug , ses: SessionDep):
+    result = await ses.execute(select(Player).options(selectinload(Player.team)).join(Team).where(Team.slug == team_slug, Player.is_active == True))
+    players = result.scalars().all()
 
-    if not player:
-        raise HTTPException(status_code=404, detail='Player not found')
+    if not players:
+        raise HTTPException(status_code=404, detail='Players not found')
     
-    return {
+    return [
+        {
         "nickname": player.nickname,
         "real_name": player.real_name,
         "country_code": player.country_code,
@@ -61,6 +63,37 @@ async def get_player_in_window(nickname , ses: SessionDep):
             "name" : player.team.name,
             "slug" : player.team.slug,
             "region" : player.team.region
+        }
+    }
+        for player in players
+    ]
+
+@router.get('/teams/{team_slug}/players/{nickname}')
+async def get_player(team_slug: str , nickname , ses: SessionDep):
+    result = await ses.execute(select(Player)
+                               .options(selectinload(Player.team))
+                               .join(Team)
+                               .where(Team.slug == team_slug , Player.nickname == nickname, Player.is_active == True)
+                              )
+    player = result.scalar_one_or_none()
+
+    if not player:
+        raise HTTPException(status_code=404, detail='Player not found')
+    
+    return {
+        'nickname' : player.nickname,
+        'real_name' : player.real_name,
+        'country_code' : player.country_code,
+        'flag_url' : f'/static/flags/{player.country_code.lower()}.svg',
+        'role' : player.role,
+        'description' : player.description,
+        'photo_url' : player.photo_url,
+        'team' : {
+            'name' : player.team.name,
+            'short_name' : player.team.short_name,
+            'country_code' : player.team.country_code,
+            'region' : player.team.region,
+            'logo_url' : player.team.logo_url
         }
     }
 
