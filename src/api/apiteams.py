@@ -4,6 +4,7 @@ from sqlalchemy.orm import selectinload
 from src.database.database import SessionDep
 from src.database.models.teams import Team
 from src.database.models.players import Player
+from src.database.models.matches import Match
 
 router = APIRouter()
 
@@ -96,6 +97,47 @@ async def get_player(team_slug: str , nickname , ses: SessionDep):
             'logo_url' : player.team.logo_url
         }
     }
+
+
+@router.get('/matches')
+async def get_matches(ses: SessionDep):
+    result = await ses.execute(select(Match).options(selectinload(Match.team1),selectinload(Match.team2),selectinload(Match.winner)))
+    matches = result.scalars().all()
+
+    return [
+        {
+            'id' : match.id,
+            'team1' : {
+                'name' : match.team1.name,
+                'short_name' : match.team1.short_name,
+                'country_code' : match.team1.country_code,
+                'flag_url' : f'/static/flags/{match.team1.country_code.lower()}.svg',
+                'logo_url' : match.team1.logo_url
+            },
+            'team2' : {
+                'name' : match.team2.name,
+                'short_name' : match.team2.short_name,
+                'country_code' : match.team2.country_code,
+                'flag_url' : f'/static/flags/{match.team2.country_code.lower()}.svg',
+                'logo_url' : match.team2.logo_url
+            },
+            'start_time' : match.start_time,
+            'bo_type' : match.bo_type.value,
+            'stage' : match.stage.value,
+            'status' : match.status.value,
+            'score_team1' : match.score_team1,
+            'score_team2' : match.score_team2,
+            'winner' : (
+                    {
+                    'name' : match.winner.name,
+                    'flag_url' : f'/static/flags/{match.winner.country_code.lower()}.svg',
+                    'logo_url' : match.winner.logo_url
+                    } if match.winner else None
+                        ),
+            'stream_url' : match.stream_url
+        }
+        for match in matches
+    ]
 
     
 
