@@ -69,13 +69,15 @@ class Match(Base):
     team2 = relationship('Team' , foreign_keys = [team2_id])
     winner = relationship('Team', foreign_keys=[winner_id])
 
+    maps = relationship('MatchMap' , back_populates = 'match')
+
 
 class MatchMap(Base):
     __tablename__ = 'matches_maps'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     
-    match_id : Mapped[int] = mapped_column(ForeignKey('matches.id', ondelete='CASCADE'), nullable = True)
+    match_id : Mapped[int] = mapped_column(ForeignKey('matches.id', ondelete='CASCADE'), nullable = False)
 
     map_order : Mapped[int] = mapped_column(nullable = False)
     map_name : Mapped[MapNameEnum] = mapped_column(SAEnum(MapNameEnum) , nullable = False)
@@ -87,7 +89,7 @@ class MatchMap(Base):
 
     winner_id : Mapped[int | None] = mapped_column(ForeignKey('teams.id', ondelete='SET NULL'), nullable = True)
 
-    match = relationship('Match' , foreign_keys=[match_id])
+    match = relationship('Match' , back_populates = 'maps')
     picked_by_team = relationship('Team', foreign_keys=[picked_by_team_id])
     winner = relationship('Team' , foreign_keys=[winner_id])
 
