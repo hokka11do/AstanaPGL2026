@@ -47,3 +47,5 @@ class Player(Base):
     )
 
     team = relationship("Team", back_populates="players")
+
+    player_stat = relationship('PlayerStats' , back_populates = 'player')

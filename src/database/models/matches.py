@@ -92,4 +92,44 @@ class MatchMap(Base):
     match = relationship('Match' , back_populates = 'maps')
     picked_by_team = relationship('Team', foreign_keys=[picked_by_team_id])
     winner = relationship('Team' , foreign_keys=[winner_id])
+    player_stat = relationship('PlayerStats' , back_populates = 'match_map')
+
+
+def calculate_rating(kills, deaths, rounds, adr, kast):
+    kpr = kills / rounds
+    dpr = deaths / rounds
+
+    rating = (
+        0.4 * kpr - 0.3 * dpr + 0.002 * adr + 0.003 * kast
+    )
+
+    return round(rating, 2)
+
+
+
+class PlayerStats(Base):
+    __tablename__ = 'player_stats'
+
+    id : Mapped[int] = mapped_column(primary_key=True)
+
+    match_map_id : Mapped[int] = mapped_column(ForeignKey('matches_maps.id', ondelete='CASCADE'), nullable=False)
+    player_id : Mapped[int] = mapped_column(ForeignKey('players.id', ondelete='CASCADE'), nullable=False)
+
+    kills : Mapped[float] = mapped_column(default = 0, nullable=False)
+    deaths : Mapped[float] = mapped_column(default = 0, nullable=False)
+    assists : Mapped[float] = mapped_column(default = 0, nullable=False)
+
+    adr : Mapped[float] = mapped_column(default=0.0 , nullable=False)
+    kast : Mapped[float] = mapped_column(default=0.0 , nullable=False)
+    rating : Mapped[float] = mapped_column(default=0.0 , nullable=False)
+
+    hs_percentage : Mapped[float] = mapped_column(default=0.0, nullable=False)
+    
+    match_map = relationship('MatchMap', back_populates='player_stat')
+    player = relationship('Player', back_populates='player_stat')
+
+
+
+
+
 
