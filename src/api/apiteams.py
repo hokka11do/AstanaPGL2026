@@ -4,7 +4,7 @@ from sqlalchemy.orm import selectinload
 from src.database.database import SessionDep
 from src.database.models.teams import Team
 from src.database.models.players import Player
-from src.database.models.matches import Match , MatchMap
+from src.database.models.matches import Match , MatchMap , PlayerStats
 
 router = APIRouter()
 
@@ -204,57 +204,106 @@ async def get_match_by_id(match_id : int, ses: SessionDep):
     }
 
 @router.get('/matches/{match_id}/maps/{match_map_id}')
-async def get_match_map_by_id(match_id : int , match_map_id : int , ses : SessionDep):
-    result = await ses.execute(select(MatchMap).options(selectinload(MatchMap.match).selectinload(Match.team1),selectinload(MatchMap.match).selectinload(Match.team2), selectinload(MatchMap.picked_by_team), selectinload(MatchMap.winner)).where(MatchMap.id == match_map_id , MatchMap.match_id == match_id))
+async def get_match_map_by_id(match_id: int, match_map_id: int, ses: SessionDep):
+    result = await ses.execute(
+        select(MatchMap).options(
+            selectinload(MatchMap.match).selectinload(Match.team1),
+            selectinload(MatchMap.match).selectinload(Match.team2),
+            selectinload(MatchMap.picked_by_team),
+            selectinload(MatchMap.winner),
+            selectinload(MatchMap.player_stat).selectinload(PlayerStats.player)
+        ).where(
+            MatchMap.id == match_map_id,
+            MatchMap.match_id == match_id
+        )
+    )
     match_map = result.scalar_one_or_none()
 
     if not match_map:
-        raise HTTPException(status_code=404 , detail='Match(map) not found in database!')
-    
+        raise HTTPException(status_code=404, detail='Match map not found in database!')
+
+    team1_stats = [
+        {
+            'id': player_stat.player.id,
+            'nickname': player_stat.player.nickname,
+            'real_name': player_stat.player.real_name,
+            'photo_url': player_stat.player.photo_url,
+            'kills': player_stat.kills,
+            'deaths': player_stat.deaths,
+            'assists': player_stat.assists,
+            'adr': player_stat.adr,
+            'kast': player_stat.kast,
+            'rating': player_stat.rating,
+            'hs_percentage': player_stat.hs_percentage
+        }
+        for player_stat in match_map.player_stat
+        if player_stat.player.team_id == match_map.match.team1_id
+    ]
+
+    team2_stats = [
+        {
+            'id': player_stat.player.id,
+            'nickname': player_stat.player.nickname,
+            'real_name': player_stat.player.real_name,
+            'photo_url': player_stat.player.photo_url,
+            'kills': player_stat.kills,
+            'deaths': player_stat.deaths,
+            'assists': player_stat.assists,
+            'adr': player_stat.adr,
+            'kast': player_stat.kast,
+            'rating': player_stat.rating,
+            'hs_percentage': player_stat.hs_percentage
+        }
+        for player_stat in match_map.player_stat
+        if player_stat.player.team_id == match_map.match.team2_id
+    ]
+
     return {
-        'id' : match_map.id,
-        'match_id' : match_map.match_id,
-        'map_order' : match_map.map_order,
-        'map_name' : match_map.map_name.value,
-        'picked_by_team' : (
+        'id': match_map.id,
+        'match_id': match_map.match_id,
+        'map_order': match_map.map_order,
+        'map_name': match_map.map_name.value,
+        'picked_by_team': (
             {
-                'name' : match_map.picked_by_team.name,
-                'logo_url' : match_map.picked_by_team.logo_url
+                'name': match_map.picked_by_team.name,
+                'logo_url': match_map.picked_by_team.logo_url
             }
             if match_map.picked_by_team else
             {
-                'name' : 'decider',
-                'logo_url' : None
+                'name': 'decider',
+                'logo_url': None
             }
         ),
-        'score_team1' : match_map.score_team1,
-        'score_team2' : match_map.score_team2,
-        'winner' : (
+        'score_team1': match_map.score_team1,
+        'score_team2': match_map.score_team2,
+        'winner': (
             {
-                'name' : match_map.winner.name,
-                'logo_url' : match_map.winner.logo_url,
-                'country_code' : match_map.winner.country_code,
-                'flag_url' : f'/static/flags/{match_map.winner.country_code.lower()}.svg',
-                'region' : match_map.winner.region,
-                'short_name' : match_map.winner.short_name
+                'name': match_map.winner.name,
+                'logo_url': match_map.winner.logo_url,
+                'country_code': match_map.winner.country_code,
+                'flag_url': f'/static/flags/{match_map.winner.country_code.lower()}.svg',
+                'region': match_map.winner.region,
+                'short_name': match_map.winner.short_name
             }
             if match_map.winner else None
         ),
-        'team1' : {
-            'name' : match_map.match.team1.name,
-            'logo_url' : match_map.match.team1.logo_url,
-            'country_code' : match_map.match.team1.country_code,
-            'flag_url' : f'/static/flags/{match_map.match.team1.country_code.lower()}.svg',
-            'region' : match_map.match.team1.region,
-            'short_name' : match_map.match.team1.short_name
+        'team1': {
+            'name': match_map.match.team1.name,
+            'logo_url': match_map.match.team1.logo_url,
+            'country_code': match_map.match.team1.country_code,
+            'flag_url': f'/static/flags/{match_map.match.team1.country_code.lower()}.svg',
+            'region': match_map.match.team1.region,
+            'short_name': match_map.match.team1.short_name,
+            'players_stats': team1_stats
         },
-        'team2' : {
-            'name' : match_map.match.team2.name,
-            'logo_url' : match_map.match.team2.logo_url,
-            'country_code' : match_map.match.team2.country_code,
-            'flag_url' : f'/static/flags/{match_map.match.team2.country_code.lower()}.svg',
-            'region' : match_map.match.team2.region,
-            'short_name' : match_map.match.team2.short_name
+        'team2': {
+            'name': match_map.match.team2.name,
+            'logo_url': match_map.match.team2.logo_url,
+            'country_code': match_map.match.team2.country_code,
+            'flag_url': f'/static/flags/{match_map.match.team2.country_code.lower()}.svg',
+            'region': match_map.match.team2.region,
+            'short_name': match_map.match.team2.short_name,
+            'players_stats': team2_stats
         }
     }
 
