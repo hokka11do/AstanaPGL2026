@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Команда — Astana PGL 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .team-hero {
+      position: relative; overflow: hidden;
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 100px 40px 48px;
+    }
+    .team-hero-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 100% at 80% 50%, rgba(0,229,255,.04) 0%, transparent 70%);
+    }
+    .team-hero-inner { position: relative; max-width: 1300px; margin: 0 auto; display: flex; align-items: center; gap: 48px; flex-wrap: wrap; }
+    .team-hero-logo { width: 120px; height: 120px; object-fit: contain; filter: drop-shadow(0 0 32px rgba(0,229,255,.3)); }
+    .team-hero-info { flex: 1; min-width: 240px; }
+    .team-hero-name { font-size: clamp(40px, 7vw, 90px); line-height: .9; }
+    .team-hero-meta { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 16px; }
+    .team-hero-meta-item { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text2); }
+    .team-hero-flag { width: 20px; height: 15px; object-fit: cover; border-radius: 2px; }
+    .team-description { font-size: 14px; color: var(--text2); margin-top: 16px; max-width: 600px; line-height: 1.7; }
+
+    .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .player-card-role { text-transform: uppercase; }
+    .role-tag {
+      display: inline-block; font-family: var(--font-mono); font-size: 9px; letter-spacing: .2em;
+      padding: 2px 8px; border-radius: 2px; margin-top: 4px;
+    }
+    .role-rifler { background: rgba(0,229,255,.1); color: var(--accent); }
+    .role-awper { background: rgba(255,60,60,.1); color: var(--accent2); }
+    .role-igl { background: rgba(255,214,0,.1); color: var(--accent3); }
+    .role-support { background: rgba(120,80,255,.1); color: #a878ff; }
+    .role-lurker { background: rgba(0,255,120,.1); color: #00ff78; }
+  </style>
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+  <div id="main"></div>
+  <div id="footer-placeholder"></div>
+
+  <script src="js/utils.js"></script>
+  <script>
+    document.getElementById('nav-placeholder').innerHTML = renderNav();
+    document.getElementById('footer-placeholder').innerHTML = renderFooter();
+
+    const params = new URLSearchParams(location.search);
+    const slug = params.get('slug');
+
+    function roleClass(role) {
+      if (!role) return '';
+      const r = role.toLowerCase();
+      if (r.includes('awp')) return 'role-awper';
+      if (r.includes('igl') || r.includes('captain')) return 'role-igl';
+      if (r.includes('support')) return 'role-support';
+      if (r.includes('lurk')) return 'role-lurker';
+      return 'role-rifler';
+    }
+
+    async function loadTeam() {
+      const main = document.getElementById('main');
+      if (!slug) { main.innerHTML = '<div class="section"><div class="error-box">// ERR: slug не указан</div></div>'; return; }
+
+      main.innerHTML = '<div class="section"><div class="loading"><div class="spinner"></div><div class="loading-text">ЗАГРУЗКА...</div></div></div>';
+
+      try {
+        const [team, players] = await Promise.all([
+          apiFetch(`/teams/${slug}`),
+          apiFetch(`/teams/${slug}/players`).catch(() => [])
+        ]);
+
+        document.title = `${team.name} — Astana PGL 2026`;
+
+        main.innerHTML = `
+          <div class="team-hero">
+            <div class="team-hero-bg"></div>
+            <div class="team-hero-inner">
+              <img class="team-hero-logo" src="${logoSrc(team.logo_url)}" alt="${team.name}" onerror="this.style.opacity='.3'"/>
+              <div class="team-hero-info">
+                <div class="breadcrumb">
+                  <a href="/static/teams.html">КОМАНДЫ</a>
+                  <span class="breadcrumb-sep">›</span>
+                  <span class="breadcrumb-current">${team.name}</span>
+                </div>
+                <h1 class="team-hero-name">${team.name}</h1>
+                <div class="team-hero-meta">
+                  ${team.country_code ? `<div class="team-hero-meta-item"><img class="team-hero-flag" src="/static/flags/${team.country_code.toLowerCase()}.svg" onerror="this.style.display='none'"/> ${team.country_code}</div>` : ''}
+                  ${team.region ? `<div class="team-hero-meta-item">📍 ${team.region}</div>` : ''}
+                  ${team.short_name ? `<div class="team-hero-meta-item">// ${team.short_name}</div>` : ''}
+                  <div class="team-hero-meta-item">👥 ${players.length} игроков</div>
+                </div>
+                ${team.description ? `<p class="team-description">${team.description}</p>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-header">
+              <div class="section-label">СОСТАВ</div>
+              <h2 class="section-title">ИГРОКИ</h2>
+              <div class="section-line"></div>
+            </div>
+            ${players.length ? `
+              <div class="players-grid stagger">
+                ${players.map(p => `
+                  <a href="/static/player.html?team=${slug}&nick=${encodeURIComponent(p.nickname)}" class="card player-card">
+                    <img class="player-card-img" src="${logoSrc(p.photo_url)}" alt="${p.nickname}" onerror="this.src='/static/img/placeholder-player.svg'"/>
+                    <div class="player-card-info">
+                      <div class="player-card-nick">${p.nickname}</div>
+                      <div class="player-card-real">${p.real_name||''}</div>
+                      <div class="player-card-role">
+                        <div class="role-tag ${roleClass(p.role)}">${p.role||'PLAYER'}</div>
+                      </div>
+                      ${p.country_code ? `<div style="margin-top:8px"><img style="width:16px;height:12px;object-fit:cover;border-radius:2px" src="/static/flags/${p.country_code.toLowerCase()}.svg" onerror="this.style.display='none'"/></div>` : ''}
+                    </div>
+                  </a>`).join('')}
+              </div>` : '<div class="empty"><div class="empty-icon">👥</div>Нет активных игроков</div>'}
+          </div>`;
+
+      } catch(e) {
+        main.innerHTML = `<div class="section"><div class="error-box">// ERR: Команда не найдена (${slug})</div></div>`;
+      }
+    }
+
+    loadTeam();
+  </script>
+</body>
+</html>

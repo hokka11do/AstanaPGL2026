@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped , mapped_column , DeclarativeBase, relationship
-from sqlalchemy import ForeignKey, String, Integer, Boolean, DateTime, func
+from sqlalchemy import ForeignKey, String, Integer, Boolean, DateTime, func , Float
 from datetime import datetime
 from enum import Enum
 from sqlalchemy import Enum as SAEnum
@@ -34,6 +34,8 @@ class Player(Base):
 
     photo_url: Mapped[str] = mapped_column(String, nullable=True)
 
+    hltv_url : Mapped[str] = mapped_column(String, nullable = True)
+
     team_id: Mapped[int] = mapped_column(
         ForeignKey("teams.id", ondelete="SET NULL"),
         nullable=True
@@ -49,3 +51,23 @@ class Player(Base):
     team = relationship("Team", back_populates="players")
 
     player_stat = relationship('PlayerStats' , back_populates = 'player')
+
+    player_hltv_stats = relationship('PlayerHLTVStats' , back_populates = 'playerh')
+
+
+class PlayerHLTVStats(Base):
+    __tablename__ = 'player_hltv_stats'
+
+    id : Mapped[int] = mapped_column(primary_key=True)
+    player_id : Mapped[int] = mapped_column(ForeignKey('players.id'), unique=True)
+
+    rating : Mapped[float | None] = mapped_column(Float, nullable = True)
+    adr : Mapped[float | None] = mapped_column(Float, nullable = True)
+    kast : Mapped[float | None] = mapped_column(Float, nullable = True)
+    kpr : Mapped[float | None] = mapped_column(Float, nullable = True)
+    dpr : Mapped[float | None] = mapped_column(Float, nullable = True)
+    impact : Mapped[float | None] = mapped_column(Float, nullable = True)
+
+    updated_at : Mapped[datetime | None] = mapped_column(DateTime , nullable = True)
+
+    playerh = relationship('Player' , back_populates = 'player_hltv_stats')
