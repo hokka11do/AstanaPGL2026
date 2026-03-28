@@ -1,15 +1,48 @@
 from fastapi import APIRouter , HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from src.database.database import SessionDep
+from src.database.database import SessionDep , session
 from src.database.models.teams import Team
-from src.database.models.players import Player
+from src.database.models.players import Player , PlayerHLTVStats
 from src.database.models.matches import Match , MatchMap , PlayerStats
+from datetime import timedelta , datetime
 
 router = APIRouter()
 
+CACHE_TTL = timedelta(hours=12)
+
 # TEAMS
 # TEAMS
+
+async def get_or_update_player_hltv_stats(player: Player , ses : SessionDep):
+    stats = await ses.scalar(select(PlayerHLTVStats).where(PlayerHLTVStats.player_id == player.id))
+
+    now = datetime.utcnow()
+
+    if stats and stats.updated_at and now - stats.updated_at < CACHE_TTL:
+        return stats
+    
+    parsed = await parse_hltv_stats(player.hltv_stats)
+
+    if not stats:
+        stats = PlayerHLTVStats(player_id = player.id)
+        ses.add(stats)
+    
+    stats.rating = parsed['rating']
+    stats.adr = parsed['adr']
+    stats.kast = parsed['kast']
+    stats.kpr = parsed['kpr']
+    stats.dpr = parsed['dpr']
+    stats.impact = parsed['impact']
+    stats.updated_at = now
+
+    await ses.commit()
+    await ses.refresh(stats)
+
+    return stats
+
+
+
 
 @router.get('/teams')
 async def get_teams(ses: SessionDep):

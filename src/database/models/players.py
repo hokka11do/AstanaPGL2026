@@ -52,7 +52,7 @@ class Player(Base):
 
     player_stat = relationship('PlayerStats' , back_populates = 'player')
 
-    player_hltv_stats = relationship('PlayerHLTVStats' , back_populates = 'playerh')
+    hltv_stats = relationship('PlayerHLTVStats' , back_populates = 'playerh')
 
 
 class PlayerHLTVStats(Base):
