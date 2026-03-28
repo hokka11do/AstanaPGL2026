@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Игрок — Astana PGL 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .player-hero {
+      position: relative; overflow: hidden;
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 100px 40px 0; min-height: 400px;
+    }
+    .player-hero-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 50% 100% at 75% 100%, rgba(0,229,255,.06) 0%, transparent 70%);
+    }
+    .player-hero-inner { position: relative; max-width: 1300px; margin: 0 auto; display: grid; grid-template-columns: 280px 1fr; gap: 48px; align-items: end; }
+    .player-photo { width: 280px; object-fit: cover; object-position: top; display: block; }
+    .player-info { padding-bottom: 48px; }
+    .player-nick { font-size: clamp(48px, 8vw, 100px); line-height: .9; }
+    .player-real { font-size: 18px; color: var(--text2); margin: 8px 0 16px; font-family: var(--font-mono); }
+    .player-meta { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; }
+    .player-meta-item { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text2); }
+    .player-flag { width: 20px; height: 15px; object-fit: cover; border-radius: 2px; }
+    .role-big { font-family: var(--font-mono); font-size: 11px; letter-spacing: .3em; color: var(--accent); background: rgba(0,229,255,.08); border: 1px solid rgba(0,229,255,.2); padding: 6px 16px; display: inline-block; }
+    .player-description { font-size: 14px; color: var(--text2); max-width: 560px; line-height: 1.8; margin-top: 16px; }
+    .team-chip {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      padding: 8px 16px; margin-top: 20px;
+      font-family: var(--font-head); font-size: 18px;
+    }
+    .team-chip-logo { width: 28px; height: 28px; object-fit: contain; }
+    @media(max-width:768px) { .player-hero-inner { grid-template-columns: 1fr; } .player-photo { width: 100%; max-width: 300px; } }
+  </style>
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+  <div id="main"></div>
+  <div id="footer-placeholder"></div>
+
+  <script src="js/utils.js"></script>
+  <script>
+    document.getElementById('nav-placeholder').innerHTML = renderNav();
+    document.getElementById('footer-placeholder').innerHTML = renderFooter();
+
+    const params = new URLSearchParams(location.search);
+    const teamSlug = params.get('team');
+    const nick = params.get('nick');
+
+    async function loadPlayer() {
+      const main = document.getElementById('main');
+      if (!teamSlug || !nick) {
+        main.innerHTML = '<div class="section"><div class="error-box">// ERR: Параметры не указаны</div></div>';
+        return;
+      }
+      main.innerHTML = '<div class="section"><div class="loading"><div class="spinner"></div><div class="loading-text">ЗАГРУЗКА...</div></div></div>';
+
+      try {
+        const player = await apiFetch(`/teams/${teamSlug}/players/${encodeURIComponent(nick)}`);
+        document.title = `${player.nickname} — Astana PGL 2026`;
+
+        main.innerHTML = `
+          <div class="player-hero">
+            <div class="player-hero-bg"></div>
+            <div class="player-hero-inner">
+              <img class="player-photo" src="${logoSrc(player.photo_url)}" alt="${player.nickname}" onerror="this.src='/static/img/placeholder-player.svg'"/>
+              <div class="player-info">
+                <div class="breadcrumb">
+                  <a href="/static/teams.html">КОМАНДЫ</a>
+                  <span class="breadcrumb-sep">›</span>
+                  <a href="/static/team.html?slug=${teamSlug}">${player.team?.name||teamSlug}</a>
+                  <span class="breadcrumb-sep">›</span>
+                  <span class="breadcrumb-current">${player.nickname}</span>
+                </div>
+                <h1 class="player-nick">${player.nickname}</h1>
+                <div class="player-real">${player.real_name||''}</div>
+                <div class="player-meta">
+                  ${player.country_code ? `<div class="player-meta-item"><img class="player-flag" src="/static/flags/${player.country_code.toLowerCase()}.svg" onerror="this.style.display='none'"/> ${player.country_code}</div>` : ''}
+                  ${player.role ? `<div class="role-big">${player.role.toUpperCase()}</div>` : ''}
+                </div>
+                ${player.description ? `<p class="player-description">${player.description}</p>` : ''}
+                ${player.team ? `
+                  <a href="/static/team.html?slug=${teamSlug}" class="team-chip">
+                    <img class="team-chip-logo" src="${logoSrc(player.team.logo_url)}" alt="${player.team.name}" onerror="this.style.opacity='.3'"/>
+                    ${player.team.name}
+                    ${player.team.region ? `<span style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-left:4px">${player.team.region}</span>` : ''}
+                  </a>` : ''}
+              </div>
+            </div>
+          </div>`;
+
+      } catch(e) {
+        main.innerHTML = `<div class="section"><div class="error-box">// ERR: Игрок не найден</div></div>`;
+      }
+    }
+
+    loadPlayer();
+  </script>
+</body>
+</html>

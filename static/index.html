@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Astana PGL 2026 — Pro Gaming League</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .live-section { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 40px; }
+    .live-ticker {
+      display: flex; align-items: center; gap: 16px;
+      font-family: var(--font-mono); font-size: 11px;
+      background: rgba(255,60,60,.05); border: 1px solid rgba(255,60,60,.2);
+      padding: 12px 20px; margin-bottom: 32px;
+    }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); animation: blink 1s infinite; }
+    .live-label { color: var(--accent2); letter-spacing: .2em; }
+    .live-matches { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .upcoming-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: .3em; color: var(--text3); margin: 24px 0 16px; }
+    .hero-scroll {
+      position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      font-family: var(--font-mono); font-size: 9px; letter-spacing: .3em; color: var(--text3);
+      animation: bounce 2s infinite;
+    }
+    @keyframes bounce { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(6px); } }
+    .hero-scroll-arrow { width: 1px; height: 32px; background: linear-gradient(to bottom, var(--text3), transparent); margin: 0 auto; }
+    .stats-strip { display: grid; grid-template-columns: repeat(4,1fr); border: 1px solid var(--border); margin-bottom: 60px; }
+    .stats-strip-item { padding: 24px; text-align: center; border-right: 1px solid var(--border); }
+    .stats-strip-item:last-child { border-right: none; }
+    .stats-strip-num { font-family: var(--font-head); font-size: 48px; color: var(--accent); }
+    .stats-strip-lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: .2em; color: var(--text3); margin-top: 4px; }
+    @media(max-width:640px) { .stats-strip { grid-template-columns: repeat(2,1fr); } .stats-strip-item:nth-child(2) { border-right: none; } .stats-strip-item { border-bottom: 1px solid var(--border); } }
+  </style>
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+
+  <section class="hero" style="min-height:100vh">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="scanline"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">КАЗАХСТАН · АСТАНА · 2026</div>
+      <h1 class="hero-title">ASTANA<span>PGL</span></h1>
+      <p class="hero-sub">PRO GAMING LEAGUE — СЕЗОН 2026</p>
+      <div class="hero-actions">
+        <a href="/static/matches.html" class="btn btn-primary">СМОТРЕТЬ МАТЧИ</a>
+        <a href="/static/teams.html" class="btn btn-outline">ВСЕ КОМАНДЫ</a>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <span>СКРОЛЛ</span>
+      <div class="hero-scroll-arrow"></div>
+    </div>
+  </section>
+
+  <section class="live-section">
+    <div style="max-width:1300px;margin:0 auto;">
+      <div class="live-ticker" id="liveTicker" style="display:none">
+        <div class="live-dot"></div>
+        <span class="live-label">LIVE</span>
+        <span id="liveCount"></span>
+      </div>
+      <div id="matchesHome"></div>
+    </div>
+  </section>
+
+  <div style="max-width:1300px;margin:0 auto;padding:60px 40px 0;">
+    <div class="stats-strip">
+      <div class="stats-strip-item"><div class="stats-strip-num" id="statTeams">—</div><div class="stats-strip-lbl">КОМАНД</div></div>
+      <div class="stats-strip-item"><div class="stats-strip-num" id="statMatches">—</div><div class="stats-strip-lbl">МАТЧЕЙ</div></div>
+      <div class="stats-strip-item"><div class="stats-strip-num" id="statLive">—</div><div class="stats-strip-lbl">LIVE</div></div>
+      <div class="stats-strip-item"><div class="stats-strip-num" id="statFinished">—</div><div class="stats-strip-lbl">ЗАВЕРШЕНО</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-label">УЧАСТНИКИ</div>
+      <h2 class="section-title">КОМАНДЫ</h2>
+      <div class="section-line"></div>
+    </div>
+    <div id="teamsPreview" class="grid grid-3 stagger"></div>
+    <div style="text-align:center;margin-top:32px;">
+      <a href="/static/teams.html" class="btn btn-outline">ВСЕ КОМАНДЫ →</a>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+  <script src="js/utils.js"></script>
+  <script>
+    document.getElementById('nav-placeholder').innerHTML = renderNav();
+    document.getElementById('footer-placeholder').innerHTML = renderFooter();
+
+    function matchCardHtml(m) {
+      const sc = statusClass(m.status), sl = statusLabel(m.status);
+      const s1 = m.score_team1 ?? '—', s2 = m.score_team2 ?? '—';
+      return `<a href="/static/match.html?id=${m.id}" class="card match-card">
+        <div class="match-meta">
+          <span class="match-stage">${m.stage || ''} · ${m.bo_type || ''}</span>
+          <span class="match-status ${sc}">${sl}</span>
+        </div>
+        <div class="match-teams">
+          <div class="match-team">
+            <img class="match-team-logo" src="${logoSrc(m.team1?.logo_url)}" alt="${m.team1?.name}" onerror="this.style.opacity='.2'"/>
+            <span class="match-team-name">${m.team1?.name || '?'}</span>
+          </div>
+          <div class="match-score"><span>${s1}</span><span class="match-score-sep">:</span><span>${s2}</span></div>
+          <div class="match-team right">
+            <img class="match-team-logo" src="${logoSrc(m.team2?.logo_url)}" alt="${m.team2?.name}" onerror="this.style.opacity='.2'"/>
+            <span class="match-team-name">${m.team2?.name || '?'}</span>
+          </div>
+        </div>
+        <div class="match-time">${fmtDate(m.start_time)}</div>
+      </a>`;
+    }
+
+    async function loadHome() {
+      const matchesEl = document.getElementById('matchesHome');
+      try {
+        const matches = await apiFetch('/matches');
+        const live = matches.filter(m => ['live','ongoing'].includes(m.status?.toLowerCase()));
+        const upcoming = matches.filter(m => ['upcoming','scheduled'].includes(m.status?.toLowerCase())).slice(0,6);
+        const finished = matches.filter(m => ['finished','completed'].includes(m.status?.toLowerCase()));
+        document.getElementById('statMatches').textContent = matches.length;
+        document.getElementById('statLive').textContent = live.length;
+        document.getElementById('statFinished').textContent = finished.length;
+        if (live.length > 0) {
+          document.getElementById('liveTicker').style.display = 'flex';
+          document.getElementById('liveCount').textContent = `${live.length} матч${live.length>1?'а':''} в прямом эфире`;
+        }
+        const toShow = [...live, ...upcoming];
+        if (!toShow.length) {
+          matchesEl.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>Нет запланированных матчей</div>';
+        } else {
+          let html = '';
+          if (live.length) html += `<div class="upcoming-label">// LIVE</div><div class="live-matches stagger">${live.map(matchCardHtml).join('')}</div>`;
+          if (upcoming.length) html += `<div class="upcoming-label">// БЛИЖАЙШИЕ</div><div class="live-matches stagger">${upcoming.map(matchCardHtml).join('')}</div>`;
+          matchesEl.innerHTML = html;
+        }
+      } catch(e) {
+        matchesEl.innerHTML = '<div class="error-box">// ERR: Не удалось загрузить матчи</div>';
+      }
+
+      const teamsEl = document.getElementById('teamsPreview');
+      try {
+        const teams = await apiFetch('/teams');
+        document.getElementById('statTeams').textContent = teams.length;
+        teamsEl.innerHTML = teams.slice(0,9).map(t => `
+          <a href="/static/team.html?slug=${t.slug}" class="card team-card">
+            <img class="team-card-logo" src="${logoSrc(t.logo_url)}" alt="${t.name}" onerror="this.style.opacity='.3'"/>
+            <div class="team-card-name">${t.name}</div>
+            <div class="team-card-region">${t.short_name||''} · ${t.region||''}</div>
+          </a>`).join('');
+      } catch(e) {
+        teamsEl.innerHTML = '<div class="error-box">// ERR: Не удалось загрузить команды</div>';
+      }
+    }
+
+    loadHome();
+  </script>
+</body>
+</html>
