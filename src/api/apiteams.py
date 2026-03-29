@@ -1,11 +1,17 @@
 from fastapi import APIRouter , HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.database import SessionDep , session
 from src.database.models.teams import Team
 from src.database.models.players import Player , PlayerHLTVStats
 from src.database.models.matches import Match , MatchMap , PlayerStats
 from datetime import timedelta , datetime
+from bs4 import BeautifulSoup
+from typing import Optional
+import re
+import httpx
+
 
 router = APIRouter()
 
@@ -14,7 +20,100 @@ CACHE_TTL = timedelta(hours=12)
 # TEAMS
 # TEAMS
 
-async def get_or_update_player_hltv_stats(player: Player , ses : SessionDep):
+
+def _to_float(value: str) -> Optional[float]:
+    if not value:
+        return None
+
+    value = value.strip()
+    value = value.replace("%", "")
+    value = value.replace(",", ".")
+
+    match = re.search(r"\d+(?:\.\d+)?", value)
+    if not match:
+        return None
+
+    return float(match.group())
+
+
+def _extract_summary_stats(summary_text: str) -> dict:
+
+    text = " ".join(summary_text.split()).upper()
+
+    rating_match = re.search(r"(\d+(?:\.\d+)?)\s+RATING(?:\s+3\.0|\s+2\.0)?", text)
+    kast_match = re.search(r"(\d+(?:\.\d+)?)%\s+KAST", text)
+    adr_match = re.search(r"(\d+(?:\.\d+)?)\s+ADR", text)
+    kpr_match = re.search(r"(\d+(?:\.\d+)?)\s+KPR", text)
+    dpr_match = re.search(r"(\d+(?:\.\d+)?)\s+DPR", text)
+
+    return {
+        "rating": float(rating_match.group(1)) if rating_match else None,
+        "kast": float(kast_match.group(1)) if kast_match else None,
+        "adr": float(adr_match.group(1)) if adr_match else None,
+        "kpr": float(kpr_match.group(1)) if kpr_match else None,
+        "dpr": float(dpr_match.group(1)) if dpr_match else None,
+    }
+
+
+def _extract_impact_from_statistics(statistics_text: str) -> Optional[float]:
+
+
+    text = " ".join(statistics_text.split())
+    match = re.search(r"Impact rating\s+(\d+(?:\.\d+)?)", text, flags=re.IGNORECASE)
+
+    if not match:
+        return None
+
+    return float(match.group(1))
+
+
+async def parse_hltv_player_stats(url: str) -> dict:
+    headers = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/146.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9,ru;q=0.8",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+    "Referer": "https://www.hltv.org/",
+}
+
+    async with httpx.AsyncClient(headers=headers, timeout=20.0, follow_redirects=True) as client:
+        response = await client.get(url)
+        response.raise_for_status()
+
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    summary_box = soup.select_one("div.player-summary-stat-box.compact")
+    if not summary_box:
+        raise ValueError("Не найден блок player-summary-stat-box compact")
+
+    statistics_block = soup.select_one("div.statistics")
+    if not statistics_block:
+        raise ValueError("Не найден блок statistics")
+
+    summary_text = summary_box.get_text(" ", strip=True)
+    statistics_text = statistics_block.get_text(" ", strip=True)
+
+    summary_stats = _extract_summary_stats(summary_text)
+    impact = _extract_impact_from_statistics(statistics_text)
+
+    return {
+        "rating": summary_stats["rating"],
+        "adr": summary_stats["adr"],
+        "kast": summary_stats["kast"],
+        "kpr": summary_stats["kpr"],
+        "dpr": summary_stats["dpr"],
+        "impact": impact,
+    }
+
+
+
+
+async def get_or_update_player_hltv_stats(player: Player , ses : AsyncSession):
     stats = await ses.scalar(select(PlayerHLTVStats).where(PlayerHLTVStats.player_id == player.id))
 
     now = datetime.utcnow()
@@ -22,7 +121,7 @@ async def get_or_update_player_hltv_stats(player: Player , ses : SessionDep):
     if stats and stats.updated_at and now - stats.updated_at < CACHE_TTL:
         return stats
     
-    parsed = await parse_hltv_stats(player.hltv_stats)
+    parsed = await parse_hltv_player_stats(player.hltv_url)
 
     if not stats:
         stats = PlayerHLTVStats(player_id = player.id)
@@ -40,7 +139,6 @@ async def get_or_update_player_hltv_stats(player: Player , ses : SessionDep):
     await ses.refresh(stats)
 
     return stats
-
 
 
 
@@ -106,7 +204,7 @@ async def get_team_players(team_slug , ses: SessionDep):
 @router.get('/teams/{team_slug}/players/{nickname}')
 async def get_player(team_slug: str , nickname , ses: SessionDep):
     result = await ses.execute(select(Player)
-                               .options(selectinload(Player.team))
+                               .options(selectinload(Player.team), selectinload(Player.hltv_stats))
                                .join(Team)
                                .where(Team.slug == team_slug , Player.nickname == nickname, Player.is_active == True)
                               )
@@ -114,6 +212,25 @@ async def get_player(team_slug: str , nickname , ses: SessionDep):
 
     if not player:
         raise HTTPException(status_code=404, detail='Player not found')
+    
+    stats = None
+
+    if player.hltv_url:
+        try:
+            stats_obj = await get_or_update_player_hltv_stats(player, ses)
+
+            stats = {
+                'rating': stats_obj.rating,
+                'adr': stats_obj.adr,
+                'kast': stats_obj.kast,
+                'kpr': stats_obj.kpr,
+                'dpr': stats_obj.dpr,
+                'impact': stats_obj.impact,
+                'updated_at': stats_obj.updated_at
+            }
+        except Exception as e:
+            print(f'HLTV stats error for {player.nickname}: {e}')
+            stats = None
     
     return {
         'nickname' : player.nickname,
@@ -130,7 +247,8 @@ async def get_player(team_slug: str , nickname , ses: SessionDep):
             'country_code' : player.team.country_code,
             'region' : player.team.region,
             'logo_url' : player.team.logo_url
-        }
+        },
+        'hltv_stats' : stats
     }
 
 

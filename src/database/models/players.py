@@ -55,6 +55,7 @@ class Player(Base):
     hltv_stats = relationship('PlayerHLTVStats' , back_populates = 'playerh')
 
 
+
 class PlayerHLTVStats(Base):
     __tablename__ = 'player_hltv_stats'
 
@@ -70,4 +71,4 @@ class PlayerHLTVStats(Base):
 
     updated_at : Mapped[datetime | None] = mapped_column(DateTime , nullable = True)
 
-    playerh = relationship('Player' , back_populates = 'player_hltv_stats')
+    playerh = relationship('Player' , back_populates = 'hltv_stats')
