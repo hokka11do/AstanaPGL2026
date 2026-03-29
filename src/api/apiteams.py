@@ -90,6 +90,7 @@ async def get_player(team_slug: str , nickname , ses: SessionDep):
         'role' : player.role,
         'description' : player.description,
         'photo_url' : player.photo_url,
+        'hltv_url' : player.hltv_url,
         'team' : {
             'name' : player.team.name,
             'short_name' : player.team.short_name,

@@ -32,7 +32,9 @@ class Player(Base):
 
     description : Mapped[str | None] = mapped_column(Text , nullable=True)
 
-    photo_url: Mapped[str] = mapped_column(String, nullable=True)
+    photo_url: Mapped[str] = mapped_column(String, nullable=True),
+
+    hltv_url : Mapped[str] = mapped_column(String)
 
     team_id: Mapped[int] = mapped_column(
         ForeignKey("teams.id", ondelete="SET NULL"),
