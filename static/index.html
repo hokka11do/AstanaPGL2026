@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PGL Astana 2026 — Home</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+/* ── Hero ── */
+.hero {
+  position:relative; height:calc(100vh - 64px);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  overflow:hidden; text-align:center;
+  padding:0 40px;
+}
+
+.hero-bg-text {
+  position:absolute;
+  font-family:'Black Ops One', sans-serif;
+  font-size:clamp(120px,22vw,340px);
+  letter-spacing:-10px; color:transparent;
+  -webkit-text-stroke:1px rgba(0,255,231,0.06);
+  user-select:none; pointer-events:none; white-space:nowrap;
+  animation:bgDrift 20s ease-in-out infinite alternate;
+}
+
+@keyframes bgDrift {
+  from { transform:translateX(-3%) rotate(-1deg); }
+  to   { transform:translateX(3%) rotate(1deg); }
+}
+
+.hero-eyebrow {
+  font-family:'Share Tech Mono', monospace;
+  font-size:11px; letter-spacing:8px;
+  color:var(--m); text-transform:uppercase; margin-bottom:24px;
+  opacity:0; animation:rise .8s .2s forwards;
+}
+
+.hero-title {
+  font-family:'Black Ops One', sans-serif;
+  font-size:clamp(52px,9vw,128px); line-height:0.88;
+  color:var(--w); letter-spacing:2px;
+  opacity:0; animation:rise .8s .4s forwards;
+}
+
+.hero-title .line2 {
+  display:block; -webkit-text-stroke:2px var(--c); color:transparent;
+  filter:drop-shadow(0 0 30px rgba(0,255,231,0.5));
+}
+
+.hero-title .line3 {
+  display:block; font-size:0.4em; letter-spacing:12px;
+  color:var(--y); -webkit-text-stroke:0;
+  text-shadow:0 0 20px var(--y); margin-top:12px;
+}
+
+.hero-divider {
+  width:200px; height:1px;
+  background:linear-gradient(90deg,transparent,var(--c),transparent);
+  margin:32px auto; box-shadow:0 0 10px var(--c);
+  opacity:0; animation:rise .8s .6s forwards;
+}
+
+.hero-stats {
+  display:flex; gap:60px; justify-content:center;
+  opacity:0; animation:rise .8s .8s forwards;
+}
+
+.hstat { text-align:center; }
+
+.hstat-n {
+  font-family:'Orbitron', monospace; font-size:42px; font-weight:900;
+  color:var(--c); text-shadow:0 0 20px var(--c),0 0 40px rgba(0,255,231,0.3);
+  line-height:1;
+}
+
+.hstat-l { font-size:10px; letter-spacing:4px; color:var(--dim); text-transform:uppercase; margin-top:6px; }
+
+.hero-cta {
+  display:flex; gap:16px; margin-top:40px;
+  opacity:0; animation:rise .8s 1s forwards;
+}
+
+.scroll-hint {
+  position:absolute; bottom:32px;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  font-family:'Share Tech Mono', monospace;
+  font-size:10px; letter-spacing:3px; color:var(--dim);
+  opacity:0; animation:rise 1s 1.4s forwards;
+}
+
+.scroll-hint::after {
+  content:''; width:1px; height:40px;
+  background:linear-gradient(to bottom,var(--dim),transparent);
+  animation:scrollPulse 2s ease-in-out infinite;
+}
+
+@keyframes scrollPulse {
+  0%,100% { transform:scaleY(1); opacity:1; }
+  50%      { transform:scaleY(0.5); opacity:0.4; }
+}
+
+/* ── Recent matches section ── */
+.recent-section { background:var(--bg1); border-top:1px solid var(--dimmer); }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+<canvas id="particles"></canvas>
+
+<div id="app">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a class="nav-logo" href="index.html">PGL ASTANA 2026</a>
+    <div class="nav-links">
+      <a class="nav-btn" href="index.html">Home</a>
+      <a class="nav-btn" href="teams.html">Teams</a>
+      <a class="nav-btn" href="matches.html">Matches</a>
+    </div>
+    <div class="nav-right">
+      <div class="live-dot" id="live-indicator">LIVE</div>
+      <div class="nav-date" id="nav-date"></div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="page-wrap">
+    <div class="hero">
+      <div class="hero-bg-text">ASTANA</div>
+      <div class="hero-eyebrow">◈ CS2 Major Championship · Kazakhstan · 2026 ◈</div>
+      <h1 class="hero-title">
+        PGL
+        <span class="line2">ASTANA</span>
+        <span class="line3">MAJOR 2026</span>
+      </h1>
+      <div class="hero-divider"></div>
+      <div class="hero-stats">
+        <div class="hstat"><div class="hstat-n" id="hs-teams">—</div><div class="hstat-l">Teams</div></div>
+        <div class="hstat"><div class="hstat-n" id="hs-matches">—</div><div class="hstat-l">Matches</div></div>
+        <div class="hstat"><div class="hstat-n" id="hs-live">—</div><div class="hstat-l">Live Now</div></div>
+      </div>
+      <div class="hero-cta">
+        <a class="btn-primary" href="teams.html">View Teams</a>
+        <a class="btn-outline" href="matches.html">All Matches</a>
+      </div>
+      <div class="scroll-hint">Scroll</div>
+    </div>
+
+    <!-- RECENT MATCHES -->
+    <div class="recent-section">
+      <div class="section">
+        <div class="sec-head">
+          <div class="sec-num">01</div>
+          <div class="sec-title">Latest Matches</div>
+          <div class="sec-line"></div>
+          <div class="sec-count" id="recent-count"></div>
+        </div>
+        <div id="recent-matches-wrap"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+async function loadHome() {
+  document.getElementById('recent-matches-wrap').innerHTML = loaderHTML('Connecting to server');
+  try {
+    const [teams, matches] = await Promise.all([apiFetch('/teams'), apiFetch('/matches')]);
+
+    const liveCount = matches.filter(m => isLive(m.status)).length;
+    document.getElementById('hs-teams').textContent   = teams.length;
+    document.getElementById('hs-matches').textContent = matches.length;
+    document.getElementById('hs-live').textContent    = liveCount;
+
+    if (liveCount > 0) document.getElementById('live-indicator').classList.add('visible');
+
+    const recent = [...matches].slice(-8).reverse();
+    document.getElementById('recent-count').textContent = recent.length + ' shown';
+    document.getElementById('recent-matches-wrap').innerHTML =
+      `<div class="matches-list">${recent.map(m => matchRowHTML(m, `match.html?id=${m.id}`)).join('')}</div>`;
+
+  } catch(e) {
+    document.getElementById('recent-matches-wrap').innerHTML =
+      errHTML(`Cannot connect to API at <strong>${API}</strong> — make sure the backend is running.`);
+  }
+}
+
+sharedInit();
+loadHome();
+</script>
+</body>
+</html>

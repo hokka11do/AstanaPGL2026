@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player — PGL Astana 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Exo+2:wght@300;400;600;700;900&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ══ RESET & ROOT ══ */
+:root {
+  --c:      #00ffe7;
+  --m:      #ff2d78;
+  --y:      #ffe600;
+  --w:      #eef3ff;
+  --bg0:    #020406;
+  --bg1:    #07090f;
+  --bg2:    #0c0f1a;
+  --dim:    #36405a;
+  --dimmer: #191f30;
+  --txt:    #8fa0c0;
+  --green:  #00ff88;
+  --red:    #ff3054;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { font-size:16px; }
+body {
+  background: var(--bg0);
+  color: var(--txt);
+  font-family: 'Exo 2', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* scanlines */
+body::before {
+  content:''; position:fixed; inset:0; z-index:9000; pointer-events:none;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,231,0.02) 2px, rgba(0,255,231,0.02) 4px);
+}
+
+/* ══ CURSOR ══ */
+#cur  { position:fixed; width:10px; height:10px; border:1.5px solid var(--c); border-radius:50%; pointer-events:none !important; z-index:9999; transform:translate(-50%,-50%); mix-blend-mode:difference; transition:width .12s,height .12s; }
+#cur-t{ position:fixed; width:28px; height:28px; border:1px solid rgba(0,255,231,.2); border-radius:50%; pointer-events:none !important; z-index:9998; transform:translate(-50%,-50%); }
+
+/* ══ PARTICLES ══ */
+#particles { position:fixed; inset:0; pointer-events:none; z-index:0; }
+
+/* ══ NAV ══ */
+.nav {
+  position:sticky; top:0; z-index:1000;
+  height:60px; display:flex; align-items:center; padding:0 40px; gap:0;
+  background:rgba(2,4,6,.92); backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(0,255,231,.08);
+}
+.nav-logo {
+  font-family:'Orbitron',sans-serif; font-weight:900; font-size:13px;
+  letter-spacing:4px; color:var(--c); text-decoration:none;
+  text-shadow:0 0 16px var(--c); margin-right:40px;
+  position:relative;
+}
+.nav-logo::after {
+  content:attr(data-text); position:absolute; inset:0;
+  color:var(--m); text-shadow:0 0 16px var(--m);
+  animation:gnav 5s infinite;
+  clip-path:polygon(0 25%,100% 25%,100% 55%,0 55%);
+}
+@keyframes gnav {
+  0%,88%,100%{opacity:0;transform:none}
+  89%{opacity:.8;transform:translateX(-2px)}
+  90%{opacity:.8;transform:translateX(2px)}
+  91%{opacity:0}
+}
+.nav-links { display:flex; gap:2px; }
+.nav-a {
+  font-family:'Exo 2',sans-serif; font-size:10px; font-weight:700;
+  letter-spacing:3px; text-transform:uppercase;
+  color:var(--dim); padding:8px 16px; text-decoration:none;
+  cursor:none; position:relative; transition:color .2s;
+  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0 100%);
+}
+.nav-a:hover { color:var(--c); background:rgba(0,255,231,.05); }
+.nav-back {
+  margin-left:auto; display:inline-flex; align-items:center; gap:8px;
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+  letter-spacing:3px; text-transform:uppercase;
+  color:var(--dim); text-decoration:none;
+  border:1px solid var(--dimmer); padding:7px 16px; cursor:none;
+  transition:all .2s;
+  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0 100%);
+}
+.nav-back:hover { color:var(--c); border-color:var(--c); background:rgba(0,255,231,.05); }
+
+/* ══ PAGE WRAP ══ */
+#app { position:relative; z-index:2; }
+.page { animation:pageIn .5s cubic-bezier(.16,1,.3,1); }
+@keyframes pageIn {
+  from{opacity:0;transform:translateY(20px) scale(.99)}
+  to{opacity:1;transform:none}
+}
+@keyframes rise {
+  from{opacity:0;transform:translateY(28px)}
+  to{opacity:1;transform:none}
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ══ HERO ══ */
+.hero {
+  position:relative; overflow:hidden;
+  display:grid;
+  grid-template-columns: 1fr 360px;
+  align-items:center;
+  min-height: 520px;
+  padding: 60px 80px 0;
+  gap: 40px;
+}
+
+/* subtle bg glow — no watermark text */
+.hero::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 50% 80% at 15% 50%, rgba(0,255,231,.05), transparent),
+    radial-gradient(ellipse 40% 60% at 85% 40%, rgba(255,45,120,.04), transparent);
+}
+
+/* bottom fade-to-bg */
+.hero::after {
+  content:''; position:absolute; bottom:0; left:0; right:0;
+  height:100px; pointer-events:none;
+  background:linear-gradient(to bottom, transparent, var(--bg0));
+}
+
+/* ── Hero left ── */
+.hero-left { position:relative; z-index:2; padding-bottom:50px; }
+
+.hero-breadcrumb {
+  display:flex; align-items:center; gap:8px;
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+  letter-spacing:3px; color:var(--dim); margin-bottom:24px;
+  opacity:0; animation:rise .6s .1s forwards;
+}
+.hero-breadcrumb a { color:var(--c); text-decoration:none; }
+.hero-breadcrumb a:hover { text-shadow:0 0 8px var(--c); }
+.hero-breadcrumb span { color:var(--dimmer); }
+
+.hero-role {
+  display:inline-block;
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+  letter-spacing:4px; text-transform:uppercase;
+  color:var(--m); border:1px solid rgba(255,45,120,.35);
+  padding:4px 14px; margin-bottom:18px;
+  background:rgba(255,45,120,.06);
+  opacity:0; animation:rise .6s .2s forwards;
+}
+
+.hero-nickname {
+  font-family:'Black Ops One',sans-serif;
+  font-size:clamp(40px,6vw,88px); line-height:.9;
+  letter-spacing:2px; color:var(--w);
+  text-shadow:0 0 50px rgba(0,255,231,.12);
+  margin-bottom:12px;
+  opacity:0; animation:rise .7s .3s forwards;
+}
+
+.hero-realname {
+  font-family:'Exo 2',sans-serif; font-size:16px; font-weight:300;
+  letter-spacing:4px; color:var(--dim); text-transform:uppercase;
+  margin-bottom:28px;
+  opacity:0; animation:rise .6s .4s forwards;
+}
+
+.hero-tags {
+  display:flex; gap:8px; flex-wrap:wrap; margin-bottom:36px;
+  opacity:0; animation:rise .6s .5s forwards;
+}
+.tag {
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+  letter-spacing:2px; text-transform:uppercase;
+  padding:5px 12px; border:1px solid;
+}
+.tag-c   { border-color:rgba(0,255,231,.3);  color:var(--c);  background:rgba(0,255,231,.05); }
+.tag-m   { border-color:rgba(255,45,120,.3); color:var(--m);  background:rgba(255,45,120,.05); }
+.tag-y   { border-color:rgba(255,230,0,.3);  color:var(--y);  background:rgba(255,230,0,.05); }
+.tag-dim { border-color:var(--dimmer);       color:var(--dim); }
+
+.hero-actions {
+  display:flex; gap:12px; flex-wrap:wrap;
+  opacity:0; animation:rise .6s .65s forwards;
+}
+
+.btn-hltv {
+  display:inline-flex; align-items:center; gap:10px;
+  font-family:'Exo 2',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:3px; text-transform:uppercase;
+  padding:12px 24px; text-decoration:none;
+  background:var(--c); color:var(--bg0);
+  clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0 100%);
+  position:relative; overflow:hidden; transition:all .2s;
+}
+.btn-hltv::before {
+  content:''; position:absolute; inset:0;
+  background:var(--w); transform:translateX(-100%); transition:transform .2s;
+}
+.btn-hltv:hover::before { transform:translateX(0); }
+.btn-hltv span { position:relative; z-index:1; }
+.btn-hltv svg { position:relative; z-index:1; flex-shrink:0; }
+
+.btn-team {
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:'Exo 2',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:3px; text-transform:uppercase;
+  padding:12px 24px; text-decoration:none;
+  background:transparent; color:var(--txt);
+  border:1px solid var(--dimmer);
+  clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0 100%);
+  transition:all .2s;
+}
+.btn-team:hover { border-color:var(--c); color:var(--c); background:rgba(0,255,231,.05); }
+/* CRITICAL: team logo inside button — always tiny */
+.btn-team img {
+  width:18px !important; height:18px !important;
+  object-fit:contain; flex-shrink:0;
+}
+
+/* ── Hero right — PHOTO ── */
+.hero-right {
+  position:relative; z-index:2;
+  display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; animation:rise .8s .3s forwards;
+}
+
+/* Photo container — strict fixed dimensions */
+.photo-box {
+  position:relative;
+  width:300px;
+  height:420px;
+  overflow:hidden;
+  flex-shrink:0;
+}
+
+/* The actual player photo */
+.player-photo {
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:cover;       /* fills the box, crops excess */
+  object-position:top center;
+  filter:saturate(.85) contrast(1.05);
+  transition:filter .4s;
+  /* fade bottom edge */
+  mask-image:linear-gradient(to bottom, black 55%, transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom, black 55%, transparent 100%);
+}
+
+.photo-box:hover .player-photo { filter:saturate(1.1) contrast(1.1); }
+
+/* scan line */
+.photo-scan {
+  position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,231,.7),transparent);
+  animation:scanSlide 3.5s linear infinite; pointer-events:none; z-index:3;
+}
+@keyframes scanSlide { from{top:0} to{top:100%} }
+
+/* corner brackets */
+.photo-corner { position:absolute; width:18px; height:18px; z-index:3; }
+.photo-corner.tl { top:0; left:0; border-top:2px solid var(--c); border-left:2px solid var(--c); }
+.photo-corner.br { bottom:0; right:0; border-bottom:2px solid var(--m); border-right:2px solid var(--m); }
+
+/* No-photo placeholder — same box size */
+.photo-placeholder {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:12px;
+  background:var(--bg2); border:1px solid var(--dimmer);
+}
+.photo-placeholder-initial {
+  font-family:'Black Ops One',sans-serif; font-size:72px; color:var(--dimmer);
+  line-height:1;
+}
+.photo-placeholder-label {
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+  letter-spacing:4px; color:var(--dimmer); text-transform:uppercase;
+}
+
+/* ══ INFO SECTION ══ */
+.info-section {
+  padding:50px 80px;
+  display:grid; grid-template-columns:1fr 1fr; gap:3px;
+}
+
+.info-card {
+  background:var(--bg1); border:1px solid var(--dimmer);
+  padding:32px 36px; position:relative; overflow:hidden;
+  opacity:0; animation:rise .6s forwards;
+}
+.info-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,var(--c),transparent);
+  transform:scaleX(0); transform-origin:left; transition:transform .4s;
+}
+.info-card:hover::before { transform:scaleX(1); }
+
+.info-label {
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+  letter-spacing:5px; text-transform:uppercase; color:var(--m);
+  margin-bottom:18px; display:flex; align-items:center; gap:10px;
+}
+.info-label::after {
+  content:''; flex:1; height:1px;
+  background:linear-gradient(to right,var(--dimmer),transparent);
+}
+
+/* Team row */
+.team-row { display:flex; align-items:center; gap:16px; }
+.team-logo {
+  /* strict fixed size */
+  width:52px; height:52px; flex-shrink:0;
+  object-fit:contain;
+  filter:drop-shadow(0 0 10px rgba(0,255,231,.15));
+}
+.team-logo-ph {
+  width:52px; height:52px; flex-shrink:0;
+  background:var(--bg2); display:flex; align-items:center;
+  justify-content:center;
+  font-family:'Orbitron',sans-serif; font-size:16px; color:var(--dim);
+}
+.team-name {
+  font-family:'Black Ops One',sans-serif; font-size:24px;
+  letter-spacing:2px; color:var(--w); margin-bottom:4px;
+}
+.team-meta { font-size:12px; color:var(--dim); letter-spacing:2px; }
+
+/* Country row */
+.country-row { display:flex; align-items:center; gap:16px; }
+.flag-img { width:44px; height:auto; border:1px solid var(--dimmer); flex-shrink:0; }
+.country-name {
+  font-family:'Black Ops One',sans-serif; font-size:22px;
+  letter-spacing:2px; color:var(--w);
+}
+.country-code {
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+  color:var(--dim); letter-spacing:3px; margin-top:4px;
+}
+
+/* Description */
+.desc-text { font-size:15px; line-height:1.8; color:var(--txt); font-weight:300; }
+
+/* ══ HLTV BAND ══ */
+.hltv-band {
+  margin:0 80px 60px;
+  background:linear-gradient(90deg,var(--bg2),var(--bg1));
+  border:1px solid rgba(0,255,231,.12);
+  padding:24px 36px;
+  display:flex; align-items:center; justify-content:space-between; gap:20px;
+  position:relative; overflow:hidden;
+  opacity:0; animation:rise .6s .7s forwards;
+}
+.hltv-band::before {
+  content:'HLTV.ORG'; position:absolute; right:36px; top:50%;
+  transform:translateY(-50%);
+  font-family:'Black Ops One',sans-serif; font-size:52px;
+  color:transparent; -webkit-text-stroke:1px rgba(255,230,0,.05);
+  pointer-events:none; letter-spacing:2px;
+}
+.hltv-badge {
+  width:40px; height:40px; background:var(--y);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Black Ops One',sans-serif; font-size:13px; color:var(--bg0);
+  clip-path:polygon(0 0,100% 0,100% 75%,75% 100%,0 100%);
+  flex-shrink:0;
+}
+.hltv-band-info { }
+.hltv-band-title {
+  font-family:'Orbitron',sans-serif; font-weight:700;
+  font-size:13px; color:var(--w); letter-spacing:2px; margin-bottom:3px;
+}
+.hltv-band-sub {
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+  color:var(--dim); letter-spacing:2px;
+}
+.btn-hltv-band {
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:'Exo 2',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:3px; text-transform:uppercase;
+  padding:11px 24px; text-decoration:none;
+  background:var(--y); color:var(--bg0);
+  clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0 100%);
+  transition:all .2s; flex-shrink:0; position:relative; z-index:1;
+}
+.btn-hltv-band:hover { background:var(--w); }
+
+/* ══ LOADER / ERROR ══ */
+.loader {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  min-height:80vh; gap:24px;
+}
+.loader-ring { width:48px; height:48px; position:relative; }
+.loader-ring::before,.loader-ring::after {
+  content:''; position:absolute; inset:0;
+  border-radius:50%; border:2px solid transparent;
+}
+.loader-ring::before { border-top-color:var(--c); animation:spin 1s linear infinite; box-shadow:0 0 12px var(--c); }
+.loader-ring::after  { border-bottom-color:var(--m); animation:spin 1.5s linear infinite reverse; }
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-text {
+  font-family:'Share Tech Mono',monospace; font-size:11px;
+  letter-spacing:6px; color:var(--c); text-transform:uppercase;
+  animation:blink 1.5s ease-in-out infinite;
+}
+.err-wrap {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  min-height:60vh; gap:20px; padding:40px;
+}
+.err-box {
+  background:rgba(255,48,84,.06); border:1px solid rgba(255,48,84,.3);
+  padding:24px 32px 24px 52px;
+  font-family:'Share Tech Mono',monospace; font-size:12px;
+  letter-spacing:2px; color:var(--red); position:relative;
+}
+.err-box::before { content:'⚠'; position:absolute; left:16px; top:50%; transform:translateY(-50%); }
+
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg0)}
+::-webkit-scrollbar-thumb{background:var(--c);box-shadow:0 0 4px var(--c)}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:960px){
+  .hero { grid-template-columns:1fr; padding:40px 24px 0; min-height:auto; gap:0; }
+  .hero-right { justify-content:center; margin-top:32px; }
+  .photo-box { width:240px; height:320px; }
+  .info-section { grid-template-columns:1fr; padding:32px 24px; }
+  .hltv-band { margin:0 24px 40px; flex-direction:column; align-items:flex-start; }
+  .nav { padding:0 20px; }
+}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur-t"></div>
+<canvas id="particles"></canvas>
+
+<div id="app">
+  <nav class="nav">
+    <a class="nav-logo" href="index.html" data-text="PGL ASTANA 2026">PGL ASTANA 2026</a>
+    <div class="nav-links">
+      <a class="nav-a" href="index.html">Home</a>
+      <a class="nav-a" href="teams.html">Teams</a>
+      <a class="nav-a" href="matches.html">Matches</a>
+    </div>
+    <a class="nav-back" id="nav-back" href="teams.html">← Team</a>
+  </nav>
+
+  <div id="main"></div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+
+/* ── Cursor ── */
+const cur = document.getElementById('cur');
+const curT = document.getElementById('cur-t');
+let mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove', e => {
+  mx=e.clientX; my=e.clientY;
+  cur.style.left=mx+'px'; cur.style.top=my+'px';
+});
+setInterval(()=>{ tx+=(mx-tx)*.1; ty+=(my-ty)*.1; curT.style.left=tx+'px'; curT.style.top=ty+'px'; },16);
+function hookCursor(){
+  document.querySelectorAll('a,button').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{cur.style.width='20px';cur.style.height='20px';});
+    el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';});
+  });
+}
+
+/* ── Particles ── */
+(()=>{
+  const c=document.getElementById('particles');
+  const ctx=c.getContext('2d');
+  let W,H,pts=[];
+  const rsz=()=>{W=c.width=window.innerWidth;H=c.height=window.innerHeight;};
+  rsz(); window.addEventListener('resize',rsz);
+  for(let i=0;i<55;i++) pts.push({x:Math.random()*1400,y:Math.random()*900,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,r:Math.random()*1.3+.4,a:Math.random(),c:Math.random()>.5?'0,255,231':'255,45,120'});
+  const draw=()=>{
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.a+=.004;
+      if(p.x<0)p.x=W; if(p.x>W)p.x=0; if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${p.c},${.2+.2*Math.sin(p.a)})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  };
+  draw();
+})();
+
+/* ── Helpers ── */
+function countryName(code) {
+  if (!code) return '';
+  try { return new Intl.DisplayNames(['en'],{type:'region'}).of(code.toUpperCase()) || code.toUpperCase(); }
+  catch { return code.toUpperCase(); }
+}
+
+function cardDelay(n) { return `animation-delay:${0.55 + n * 0.1}s`; }
+
+/* ── Load ── */
+async function loadPlayer() {
+  const params   = new URLSearchParams(location.search);
+  const teamSlug = params.get('team');
+  const nickname = params.get('nick');
+  const main     = document.getElementById('main');
+
+  if (!teamSlug || !nickname) {
+    main.innerHTML = `<div class="err-wrap"><div class="err-box">Missing ?team=SLUG&nick=NICKNAME in URL</div><a class="btn-team" style="margin-top:16px" href="teams.html">← Teams</a></div>`;
+    return;
+  }
+
+  main.innerHTML = `<div class="loader"><div class="loader-ring"></div><div class="loader-text">Loading player</div></div>`;
+
+  try {
+    const r = await fetch(`${API}/teams/${teamSlug}/players/${encodeURIComponent(nickname)}`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const p = await r.json();
+
+    document.title = `${p.nickname} — PGL Astana 2026`;
+    const backEl = document.getElementById('nav-back');
+    backEl.href = `team.html?slug=${teamSlug}`;
+    backEl.textContent = `← ${p.team?.short_name || p.team?.name || 'Team'}`;
+
+    main.innerHTML = `<div class="page">
+
+      <!-- HERO -->
+      <div class="hero">
+
+        <!-- LEFT -->
+        <div class="hero-left">
+          <div class="hero-breadcrumb">
+            <a href="teams.html">Teams</a>
+            <span>/</span>
+            <a href="team.html?slug=${teamSlug}">${p.team?.name || teamSlug}</a>
+            <span>/</span>
+            <span style="color:var(--txt)">${p.nickname}</span>
+          </div>
+
+          ${p.role ? `<div class="hero-role">${p.role}</div>` : ''}
+
+          <div class="hero-nickname">${p.nickname}</div>
+          <div class="hero-realname">${p.real_name || '&nbsp;'}</div>
+
+          <div class="hero-tags">
+            ${p.country_code ? `<span class="tag tag-dim">🌐 ${countryName(p.country_code)}</span>` : ''}
+            ${p.team?.region ? `<span class="tag tag-c">${p.team.region}</span>` : ''}
+            ${p.role         ? `<span class="tag tag-m">${p.role}</span>` : ''}
+            ${p.team?.name   ? `<span class="tag tag-y">${p.team.name}</span>` : ''}
+          </div>
+
+          <div class="hero-actions">
+            ${p.hltv_url ? `
+              <a class="btn-hltv" href="${p.hltv_url}" target="_blank" rel="noopener">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                </svg>
+                <span>HLTV Profile</span>
+              </a>
+            ` : ''}
+            <a class="btn-team" href="team.html?slug=${teamSlug}">
+              ${p.team?.logo_url ? `<img src="${p.team.logo_url}" alt="${p.team.name}" onerror="this.remove()">` : ''}
+              ${p.team?.name || 'Team'}
+            </a>
+          </div>
+        </div>
+
+        <!-- RIGHT: PHOTO BOX — always same size regardless of image dimensions -->
+        <div class="hero-right">
+          <div class="photo-box">
+            ${p.photo_url
+              ? `<img src="${p.photo_url}" class="player-photo" alt="${p.nickname}" onerror="this.parentElement.innerHTML='<div class=\\'photo-placeholder\\'><div class=\\'photo-placeholder-initial\\'>${p.nickname[0].toUpperCase()}</div><div class=\\'photo-placeholder-label\\'>No Photo</div></div>'">
+                 <div class="photo-scan"></div>
+                 <div class="photo-corner tl"></div>
+                 <div class="photo-corner br"></div>`
+              : `<div class="photo-placeholder">
+                   <div class="photo-placeholder-initial">${p.nickname[0].toUpperCase()}</div>
+                   <div class="photo-placeholder-label">No Photo</div>
+                 </div>`}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- INFO CARDS -->
+      <div class="info-section">
+
+        <!-- Team -->
+        <div class="info-card" style="${cardDelay(0)}">
+          <div class="info-label">Team</div>
+          <div class="team-row">
+            ${p.team?.logo_url
+              ? `<img src="${p.team.logo_url}" class="team-logo" alt="${p.team.name}" onerror="this.style.display='none'">`
+              : `<div class="team-logo-ph">${(p.team?.name||'?')[0]}</div>`}
+            <div>
+              <div class="team-name">${p.team?.name || '—'}</div>
+              <div class="team-meta">
+                ${[p.team?.region, p.team?.country_code?.toUpperCase()].filter(Boolean).join(' · ')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Country -->
+        <div class="info-card" style="${cardDelay(1)}">
+          <div class="info-label">Nationality</div>
+          <div class="country-row">
+            ${p.flag_url ? `<img src="${p.flag_url}" class="flag-img" alt="${p.country_code}" onerror="this.remove()">` : ''}
+            <div>
+              <div class="country-name">${countryName(p.country_code)}</div>
+              <div class="country-code">${p.country_code?.toUpperCase() || ''}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        ${p.description ? `
+          <div class="info-card" style="grid-column:1/-1;${cardDelay(2)}">
+            <div class="info-label">About</div>
+            <div class="desc-text">${p.description}</div>
+          </div>
+        ` : ''}
+
+      </div>
+
+      <!-- HLTV BAND -->
+      ${p.hltv_url ? `
+        <div class="hltv-band">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div class="hltv-badge">HLT</div>
+            <div class="hltv-band-info">
+              <div class="hltv-band-title">View on HLTV.org</div>
+              <div class="hltv-band-sub">Full stats · rankings · match history</div>
+            </div>
+          </div>
+          <a class="btn-hltv-band" href="${p.hltv_url}" target="_blank" rel="noopener">
+            Open Profile →
+          </a>
+        </div>
+      ` : ''}
+
+    </div>`;
+
+    hookCursor();
+
+  } catch(e) {
+    const is404 = e.message.includes('404');
+    main.innerHTML = `
+      <div class="err-wrap">
+        <div class="err-box">
+          ${is404
+            ? `Player <strong>${nickname}</strong> not found in team <strong>${teamSlug}</strong>.`
+            : `Cannot connect to API at <strong>${API}</strong>. Make sure the backend is running.`}
+        </div>
+        <a class="btn-team" href="teams.html" style="margin-top:8px">← Teams</a>
+      </div>`;
+  }
+}
+
+hookCursor();
+loadPlayer();
+</script>
+</body>
+</html>

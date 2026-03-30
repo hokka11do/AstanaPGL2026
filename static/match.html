@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PGL Astana 2026 — Match</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+<canvas id="particles"></canvas>
+
+<div id="app">
+
+  <nav class="nav">
+    <a class="nav-logo" href="index.html">PGL ASTANA 2026</a>
+    <div class="nav-links">
+      <a class="nav-btn" href="index.html">Home</a>
+      <a class="nav-btn" href="teams.html">Teams</a>
+      <a class="nav-btn" href="matches.html">Matches</a>
+    </div>
+    <div class="nav-right">
+      <div class="live-dot" id="live-indicator">LIVE</div>
+      <div class="nav-date" id="nav-date"></div>
+    </div>
+  </nav>
+
+  <div class="page-wrap">
+    <div class="section" id="main-content">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+</div>
+
+<script src="js/app.js"></script>
+<script>
+async function loadMatch() {
+  const id = new URLSearchParams(location.search).get('id');
+  const el = document.getElementById('main-content');
+
+  if (!id) {
+    el.innerHTML = `<a class="back-btn" href="matches.html">← Matches</a>${errHTML('No match specified.')}`;
+    return;
+  }
+
+  el.innerHTML = loaderHTML('Loading match');
+
+  try {
+    const m  = await apiFetch(`/matches/${id}`);
+    const sc = statusClass(m.status);
+    const live = isLive(m.status);
+
+    if (live) document.getElementById('live-indicator').classList.add('visible');
+    document.title = `${m.team1?.name} vs ${m.team2?.name} — PGL Astana 2026`;
+
+    el.innerHTML = `
+      <a class="back-btn" href="matches.html">← Matches</a>
+
+      <!-- MATCH HERO -->
+      <div class="match-hero-wrap">
+        <div class="match-vs-grid">
+          <div class="mvg-team">
+            ${logoEl(m.team1?.logo_url, m.team1?.name, 'mvg-logo', 'mvg-logo-ph')}
+            <div class="mvg-name">${m.team1?.name || '—'}</div>
+            <div class="mvg-region">
+              ${m.team1?.region || ''}
+              ${m.team1?.country_code ? '· ' + m.team1.country_code.toUpperCase() : ''}
+            </div>
+          </div>
+
+          <div class="mvg-center">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:4px;color:var(--dim);margin-bottom:12px">
+              ${m.bo_type || ''} · ${m.stage || ''}
+            </div>
+            <div class="big-score-display">${m.score_team1 ?? '—'}:${m.score_team2 ?? '—'}</div>
+            <div style="margin-top:14px">
+              <span class="status-pill ${sc}">${live ? '● LIVE' : m.status || ''}</span>
+            </div>
+          </div>
+
+          <div class="mvg-team">
+            ${logoEl(m.team2?.logo_url, m.team2?.name, 'mvg-logo', 'mvg-logo-ph')}
+            <div class="mvg-name">${m.team2?.name || '—'}</div>
+            <div class="mvg-region">
+              ${m.team2?.region || ''}
+              ${m.team2?.country_code ? '· ' + m.team2.country_code.toUpperCase() : ''}
+            </div>
+          </div>
+        </div>
+
+        <div class="match-pills">
+          <div class="match-pill-item">
+            <div class="mpi-val">${fmtDate(m.start_time)}</div>
+            <div class="mpi-lbl">Start Time</div>
+          </div>
+          <div class="match-pill-item">
+            <div class="mpi-val">${m.bo_type || '—'}</div>
+            <div class="mpi-lbl">Format</div>
+          </div>
+          <div class="match-pill-item">
+            <div class="mpi-val">${m.stage || '—'}</div>
+            <div class="mpi-lbl">Stage</div>
+          </div>
+          <div class="match-pill-item">
+            <div class="mpi-val">${m.maps?.length || '—'}</div>
+            <div class="mpi-lbl">Maps Played</div>
+          </div>
+        </div>
+
+        ${m.winner ? `<div class="winner-banner">◈ WINNER: ${m.winner.name} ◈</div>` : ''}
+      </div>
+
+      <!-- MAPS -->
+      ${m.maps && m.maps.length ? `
+        <div class="sec-head" style="margin-bottom:24px">
+          <div class="sec-num">MAPS</div>
+          <div class="sec-title" style="font-size:24px">Map Results</div>
+          <div class="sec-line"></div>
+          <div class="sec-count">${m.maps.length} maps</div>
+        </div>
+        <div class="maps-grid">
+          ${m.maps.map((mp, i) => `
+            <a class="map-card" href="map.html?matchId=${id}&mapId=${mp.id}" style="animation:rise .4s ${i * 0.08}s both">
+              <div class="map-card-head">
+                <div class="map-name">${mp.map_name || 'Unknown'}</div>
+                <div class="map-num">MAP ${mp.map_order}</div>
+              </div>
+              <div class="map-score-area">
+                <div class="msa-team">
+                  ${logoEl(mp.team1?.logo_url || m.team1?.logo_url, mp.team1?.name || m.team1?.name, 'msa-logo', 'msa-logo')}
+                  <div class="msa-name">${mp.team1?.name || m.team1?.name || 'T1'}</div>
+                </div>
+                <div class="msa-score">${mp.score_team1 ?? '—'}:${mp.score_team2 ?? '—'}</div>
+                <div class="msa-team r">
+                  ${logoEl(mp.team2?.logo_url || m.team2?.logo_url, mp.team2?.name || m.team2?.name, 'msa-logo', 'msa-logo')}
+                  <div class="msa-name">${mp.team2?.name || m.team2?.name || 'T2'}</div>
+                </div>
+              </div>
+              <div class="map-card-foot">
+                ${mp.winner
+                  ? `<div class="map-winner-lbl">✓ ${mp.winner.name}</div>`
+                  : '<div></div>'}
+                <div class="map-pick-lbl">
+                  ${mp.picked_by?.name === 'Decider' ? '⚙ Decider'
+                    : mp.picked_by ? 'Picked by ' + mp.picked_by.name : ''}
+                </div>
+              </div>
+            </a>
+          `).join('')}
+        </div>
+      ` : `
+        <div style="color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:3px;padding:60px;text-align:center">
+          NO MAP DATA AVAILABLE
+        </div>
+      `}
+    `;
+
+  } catch(e) {
+    el.innerHTML = `
+      <a class="back-btn" href="matches.html">← Matches</a>
+      ${errHTML('Failed to load match data.')}
+    `;
+  }
+}
+
+sharedInit();
+loadMatch();
+</script>
+</body>
+</html>
