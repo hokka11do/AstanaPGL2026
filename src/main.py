@@ -5,5 +5,5 @@ from src.api import main_router
 
 app = FastAPI()
 app.mount('/static', StaticFiles(directory = 'static'), name = 'static')
-app.include_router(main_router)
+app.include_router(main_router, prefix='/api')
 

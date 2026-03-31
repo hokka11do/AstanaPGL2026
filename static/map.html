@@ -1,229 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PGL Astana 2026 — Map Stats</title>
-<link rel="stylesheet" href="css/styles.css">
-<style>
-/* ── Rating bar ── */
-.rating-bar-wrap {
-  display:flex; align-items:center; gap:8px; justify-content:center;
-}
-
-.rating-bar {
-  width:60px; height:4px; background:var(--dimmer); border-radius:0;
-  overflow:hidden;
-}
-
-.rating-bar-fill {
-  height:100%; border-radius:0;
-  transition:width 1s ease;
-}
-
-.rf-hi { background:var(--green); box-shadow:0 0 6px var(--green); }
-.rf-mi { background:var(--y);     box-shadow:0 0 6px var(--y); }
-.rf-lo { background:var(--red);   box-shadow:0 0 6px var(--red); }
-
-/* ── Stat highlight ── */
-.stat-best { background:rgba(0,255,136,0.04); }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PGL Astana 2026 — Карта матча</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js" defer></script>
+  <script defer src="js/core.js"></script>
+  <script defer src="js/map.js"></script>
 </head>
-<body>
+<body class="page">
+  <nav class="top-nav" id="site-nav"></nav>
+  <div class="mobile-menu" id="mobile-menu"></div>
 
-<div id="cursor"></div>
-<div id="cursor-trail"></div>
-<canvas id="particles"></canvas>
-
-<div id="app">
-
-  <nav class="nav">
-    <a class="nav-logo" href="index.html">PGL ASTANA 2026</a>
-    <div class="nav-links">
-      <a class="nav-btn" href="index.html">Home</a>
-      <a class="nav-btn" href="teams.html">Teams</a>
-      <a class="nav-btn" href="matches.html">Matches</a>
+  <section class="hero-mini">
+    <div class="container">
+      <div class="panel">
+        <div class="breadcrumbs">
+          <a href="index.html">Главная</a><span>•</span><a href="matches.html">Матчи</a><span>•</span><span id="map-title">Карта</span>
+        </div>
+        <h1 id="map-title">Карта</h1>
+        <p id="map-subtitle">Загрузка статистики…</p>
+      </div>
     </div>
-    <div class="nav-right">
-      <div class="live-dot" id="live-indicator">LIVE</div>
-      <div class="nav-date" id="nav-date"></div>
+  </section>
+  <section class="section" style="padding-top:28px;">
+    <div class="container">
+      <div id="map-summary"></div>
+      <div class="map-layout" id="map-tables" style="margin-top:22px;"></div>
     </div>
-  </nav>
+  </section>
 
-  <div class="page-wrap">
-    <div class="section" id="main-content">
-      <!-- filled by JS -->
-    </div>
-  </div>
-
-</div>
-
-<script src="js/app.js"></script>
-<script>
-function ratingClass(r) {
-  const v = parseFloat(r);
-  if (v >= 1.2) return 'r-hi';
-  if (v >= 0.9) return 'r-mi';
-  return 'r-lo';
-}
-
-function ratingBarClass(r) {
-  const v = parseFloat(r);
-  if (v >= 1.2) return 'rf-hi';
-  if (v >= 0.9) return 'rf-mi';
-  return 'rf-lo';
-}
-
-function ratingBarWidth(r) {
-  // 0.5 → 0%, 2.0 → 100%
-  const pct = Math.min(100, Math.max(0, ((parseFloat(r) - 0.5) / 1.5) * 100));
-  return pct.toFixed(0) + '%';
-}
-
-function statRow(p) {
-  const rc  = ratingClass(p.rating);
-  const brc = ratingBarClass(p.rating);
-  const bw  = ratingBarWidth(p.rating);
-  return `
-    <tr>
-      <td>
-        <div class="sp-wrap">
-          ${p.photo_url
-            ? `<img src="${p.photo_url}" class="sp-photo" alt="${p.nickname}" onerror="this.style.opacity=0">`
-            : `<div class="sp-ph">${(p.nickname || '?')[0]}</div>`}
-          <div>
-            <div class="sp-nick">${p.nickname || '?'}</div>
-            <div class="sp-real">${p.real_name || ''}</div>
-          </div>
-        </div>
-      </td>
-      <td>${p.kills ?? '—'}</td>
-      <td>${p.deaths ?? '—'}</td>
-      <td>${p.assists ?? '—'}</td>
-      <td>${p.adr ?? '—'}</td>
-      <td>${p.kast != null ? p.kast + '%' : '—'}</td>
-      <td>${p.hs_percentage != null ? p.hs_percentage + '%' : '—'}</td>
-      <td>
-        <div class="rating-bar-wrap">
-          <span class="${rc}">${p.rating ?? '—'}</span>
-          <div class="rating-bar">
-            <div class="rating-bar-fill ${brc}" style="width:${bw}"></div>
-          </div>
-        </div>
-      </td>
-    </tr>`;
-}
-
-function teamStatsBlock(team) {
-  if (!team.players_stats || !team.players_stats.length) {
-    return `<div style="color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;padding:20px">No stats available</div>`;
-  }
-
-  // find best rating in team for highlight
-  const maxR = Math.max(...team.players_stats.map(p => parseFloat(p.rating) || 0));
-
-  return `
-    <div class="stats-block">
-      <div class="stats-block-head">
-        ${logoEl(team.logo_url, team.name, 'sbh-logo', 'sbh-logo-ph')}
-        <div class="sbh-name">${team.name}</div>
-        ${team.country_code ? `<span class="chip chip-dim">${team.country_code.toUpperCase()}</span>` : ''}
-        ${team.region ? `<span class="chip chip-c">${team.region}</span>` : ''}
-      </div>
-      <div style="overflow-x:auto">
-        <table class="stats-tbl">
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th>K</th><th>D</th><th>A</th>
-              <th>ADR</th><th>KAST</th><th>HS%</th>
-              <th>Rating</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${team.players_stats
-              .sort((a, b) => (parseFloat(b.rating) || 0) - (parseFloat(a.rating) || 0))
-              .map(p => statRow(p))
-              .join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-}
-
-async function loadMapStats() {
-  const params  = new URLSearchParams(location.search);
-  const matchId = params.get('matchId');
-  const mapId   = params.get('mapId');
-  const el      = document.getElementById('main-content');
-
-  if (!matchId || !mapId) {
-    el.innerHTML = `<a class="back-btn" href="matches.html">← Matches</a>${errHTML('No map specified.')}`;
-    return;
-  }
-
-  el.innerHTML = loaderHTML('Loading player stats');
-
-  try {
-    const d = await apiFetch(`/matches/${matchId}/maps/${mapId}`);
-    document.title = `${d.map_name} Stats — PGL Astana 2026`;
-
-    el.innerHTML = `
-      <a class="back-btn" href="match.html?id=${matchId}">← Match</a>
-
-      <!-- MAP HERO -->
-      <div class="map-stats-hero">
-        <div class="msh-team">
-          ${logoEl(d.team1?.logo_url, d.team1?.name, 'msh-logo', 'msh-logo-ph')}
-          <div class="msh-tname">${d.team1?.name || '—'}</div>
-        </div>
-        <div class="msh-center">
-          <div class="msh-mapname">${d.map_name || 'MAP'}</div>
-          <div class="msh-score">${d.score_team1 ?? '—'} : ${d.score_team2 ?? '—'}</div>
-          ${d.winner
-            ? `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);letter-spacing:3px;margin-top:8px">✓ ${d.winner.name}</div>`
-            : ''}
-          ${d.picked_by_team
-            ? `<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:2px;margin-top:6px">${d.picked_by_team.name === 'decider' ? '⚙ DECIDER' : 'PICKED BY ' + d.picked_by_team.name.toUpperCase()}</div>`
-            : ''}
-        </div>
-        <div class="msh-team r">
-          ${logoEl(d.team2?.logo_url, d.team2?.name, 'msh-logo', 'msh-logo-ph')}
-          <div class="msh-tname">${d.team2?.name || '—'}</div>
-        </div>
-      </div>
-
-      <!-- STATS HEADER -->
-      <div class="sec-head" style="margin-bottom:32px">
-        <div class="sec-num">STATS</div>
-        <div class="sec-title" style="font-size:24px">Player Performance</div>
-        <div class="sec-line"></div>
-        <div class="sec-count" style="font-size:9px;letter-spacing:2px">SORTED BY RATING ↓</div>
-      </div>
-
-      ${teamStatsBlock(d.team1)}
-      ${teamStatsBlock(d.team2)}
-    `;
-
-    // Animate rating bars after render
-    setTimeout(() => {
-      document.querySelectorAll('.rating-bar-fill').forEach(bar => {
-        const w = bar.style.width;
-        bar.style.width = '0';
-        requestAnimationFrame(() => { bar.style.width = w; });
-      });
-    }, 100);
-
-  } catch(e) {
-    el.innerHTML = `
-      <a class="back-btn" href="match.html?id=${matchId}">← Match</a>
-      ${errHTML('Failed to load map stats.')}
-    `;
-  }
-}
-
-sharedInit();
-loadMapStats();
-</script>
+  <footer class="footer" id="site-footer"></footer>
 </body>
 </html>

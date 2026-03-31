@@ -1,167 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PGL Astana 2026 — Team</title>
-<link rel="stylesheet" href="css/styles.css">
-<style>
-/* fix cursor never blocking clicks */
-#cursor, #cursor-trail { pointer-events: none !important; }
-
-.player-card-link {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  background: var(--bg1);
-  border: 1px solid var(--dimmer);
-  padding: 24px 20px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color .25s, background .25s, transform .25s;
-  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-}
-
-.player-card-link::after {
-  content: '';
-  position: absolute; top: 0; right: 0;
-  width: 14px; height: 14px;
-  border-top: 1px solid var(--m);
-  border-right: 1px solid var(--m);
-  opacity: 0; transition: opacity .25s;
-}
-
-.player-card-link:hover {
-  border-color: rgba(0, 255, 231, 0.4);
-  background: var(--bg2);
-  transform: translateY(-3px);
-}
-
-.player-card-link:hover::after { opacity: 1; }
-
-.player-card-link:hover .pc-photo { filter: saturate(1) brightness(1.05); }
-
-.view-profile-hint {
-  margin-top: 12px;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 9px; letter-spacing: 2px;
-  color: rgba(0,255,231,0.0);
-  transition: color .2s;
-  text-transform: uppercase;
-}
-
-.player-card-link:hover .view-profile-hint {
-  color: rgba(0,255,231,0.5);
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PGL Astana 2026 — Команда</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js" defer></script>
+  <script defer src="js/core.js"></script>
+  <script defer src="js/team.js"></script>
 </head>
-<body>
+<body class="page">
+  <nav class="top-nav" id="site-nav"></nav>
+  <div class="mobile-menu" id="mobile-menu"></div>
 
-<div id="cursor"></div>
-<div id="cursor-trail"></div>
-<canvas id="particles"></canvas>
+  <section class="hero-mini team-hero-advanced">
+    <div class="container">
+      <div class="panel team-hero-panel reveal">
+        <div class="team-hero-bg-word" id="team-bg-word">TEAM</div>
 
-<div id="app">
-
-  <nav class="nav">
-    <a class="nav-logo" href="index.html">PGL ASTANA 2026</a>
-    <div class="nav-links">
-      <a class="nav-btn" href="index.html">Home</a>
-      <a class="nav-btn" href="teams.html">Teams</a>
-      <a class="nav-btn" href="matches.html">Matches</a>
-    </div>
-    <div class="nav-right">
-      <div class="live-dot" id="live-indicator">LIVE</div>
-      <div class="nav-date" id="nav-date"></div>
-    </div>
-  </nav>
-
-  <div class="page-wrap">
-    <div class="section" id="main-content"></div>
-  </div>
-
-</div>
-
-<script src="js/app.js"></script>
-<script>
-async function loadTeam() {
-  const slug = new URLSearchParams(location.search).get('slug');
-  const el   = document.getElementById('main-content');
-
-  if (!slug) {
-    el.innerHTML = errHTML('No team specified.') + `<a class="back-btn" href="teams.html" style="margin-top:16px">← Teams</a>`;
-    return;
-  }
-
-  el.innerHTML = loaderHTML('Loading team');
-
-  try {
-    const [team, players] = await Promise.all([
-      apiFetch(`/teams/${slug}`),
-      apiFetch(`/teams/${slug}/players`).catch(() => [])
-    ]);
-
-    document.title = `${team.name} — PGL Astana 2026`;
-
-    el.innerHTML = `
-      <a class="back-btn" href="teams.html">← Teams</a>
-
-      <div class="team-hero-banner" data-name="${team.name}">
-        ${logoEl(team.logo_url, team.name, 'thb-logo', 'thb-logo-ph')}
-        <div>
-          <div class="thb-name">${team.name}</div>
-          <div class="thb-tags">
-            ${team.region       ? `<span class="chip chip-c">${team.region}</span>` : ''}
-            ${team.country_code ? `<span class="chip chip-dim">${team.country_code.toUpperCase()}</span>` : ''}
-          </div>
-          ${team.description ? `<div class="thb-desc">${team.description}</div>` : ''}
+        <div class="breadcrumbs">
+          <a href="index.html">Главная</a><span>•</span><a href="teams.html">Команды</a><span>•</span><span id="team-crumb">Команда</span>
         </div>
-        <div class="thb-stats">
-          <div>
-            <div class="thb-stat-val">${players.length}</div>
-            <div class="thb-stat-lbl">Players</div>
+
+        <div class="team-hero-grid">
+          <div class="team-hero-copy">
+            <div class="kicker">Team Profile</div>
+            <h1 id="team-title">Команда</h1>
+            <p id="team-desc" class="team-hero-desc">Загрузка профиля команды…</p>
+
+            <div class="team-hero-actions">
+              <a href="#team-roster-section" class="btn btn-primary">Состав</a>
+              <a href="matches.html" class="btn">Матчи</a>
+            </div>
+          </div>
+
+          <div class="team-hero-side">
+            <div id="team-overview"></div>
           </div>
         </div>
       </div>
+    </div>
+  </section>
 
-      ${players.length ? `
-        <div class="sec-head" style="margin-bottom:24px">
-          <div class="sec-num">ROSTER</div>
-          <div class="sec-title" style="font-size:24px">Active Players</div>
-          <div class="sec-line"></div>
-          <div class="sec-count">${players.length}</div>
+  <section class="section team-roster-section" id="team-roster-section" style="padding-top:28px;">
+    <div class="container">
+      <div class="section-head reveal" style="margin-bottom:18px;">
+        <div>
+          <h2 style="font-size:2.2rem;">Основной состав</h2>
         </div>
-        <div class="roster-grid">
-          ${players.map((p, i) => `
-            <a class="player-card-link"
-               href="player.html?team=${encodeURIComponent(slug)}&nick=${encodeURIComponent(p.nickname)}"
-               style="animation: rise .4s ${i * 0.06}s both">
-              <div class="pc-country">${p.country_code || ''}</div>
-              ${logoEl(p.photo_url, p.nickname, 'pc-photo', 'pc-photo-ph')}
-              <div class="pc-nick">${p.nickname}</div>
-              <div class="pc-real">${p.real_name || ''}</div>
-              <div class="pc-role">${p.role || 'Player'}</div>
-              <div class="view-profile-hint">View Profile →</div>
-            </a>
-          `).join('')}
-        </div>
-      ` : `
-        <div style="color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:3px;padding:60px;text-align:center">
-          NO ACTIVE PLAYERS FOUND
-        </div>
-      `}
-    `;
+        <p>Клик по игроку открывает отдельную страницу профиля.</p>
+      </div>
 
-  } catch(e) {
-    el.innerHTML = `
-      <a class="back-btn" href="teams.html">← Teams</a>
-      ${errHTML('Failed to load team data.')}
-    `;
-  }
-}
+      <div class="player-list" id="team-roster"></div>
+    </div>
+  </section>
 
-sharedInit();
-loadTeam();
-</script>
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <div class="team-extra-grid">
+        <div class="card panel-card reveal team-info-card">
+          <div class="mini-kicker">Identity</div>
+          <h3>Командный профиль</h3>
+          <div class="info-list" id="team-meta-list">
+            <div class="info-item"><span>Статус</span><strong>Active</strong></div>
+            <div class="info-item"><span>Сцена</span><strong>PGL Astana 2026</strong></div>
+            <div class="info-item"><span>Фокус</span><strong>Championship Run</strong></div>
+          </div>
+        </div>
+
+        <div class="card panel-card reveal team-focus-card">
+          <div class="mini-kicker">Focus</div>
+          <h3>Турнирный фокус</h3>
+          <p class="desc">
+            Состав выходит на арену как единая машина давления: дисциплина в клатчах, контроль темпа
+            и готовность ломать ритм матча в ключевые раунды.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer" id="site-footer"></footer>
 </body>
 </html>
