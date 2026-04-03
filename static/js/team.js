@@ -1,6 +1,7 @@
 mountCommon('');
 
-const slug = qs('slug');
+const slug =
+  window.location.pathname.split('/').filter(Boolean).pop() || qs('slug');
 
 const titleEl = document.getElementById('team-title');
 const crumbEl = document.getElementById('team-crumb');

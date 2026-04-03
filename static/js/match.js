@@ -1,6 +1,7 @@
 mountCommon('matches');
 
-const id = qs('id');
+const id =
+  window.location.pathname.split('/').filter(Boolean).pop() || qs('id');
 const titleNode = document.getElementById('match-title');
 const subtitleNode = document.getElementById('match-subtitle');
 const summaryNode = document.getElementById('match-summary');

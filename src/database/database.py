@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     DB_PORT : int
     DB_NAME : str
 
-    model_config = SettingsConfigDict(env_file='.env')
+    model_config = SettingsConfigDict(env_file='.env', extra='ignore')
 
 settings = Settings()
 
@@ -27,6 +27,9 @@ session = async_sessionmaker(
     expire_on_commit = False,
     class_ = AsyncSession
 )
+
+class Base(DeclarativeBase):
+    pass
 
 async def get_session():
     async with session() as s:

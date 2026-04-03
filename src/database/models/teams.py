@@ -3,10 +3,7 @@ from sqlalchemy import ForeignKey, String, Integer, Boolean, DateTime, func
 from datetime import datetime
 from enum import Enum
 from sqlalchemy import Enum as SQLEnum
-
-
-class Base(DeclarativeBase):
-    pass
+from src.database.database import Base
 
 class RegionEnum(str, Enum):
     CIS = "CIS"

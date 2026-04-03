@@ -3,7 +3,7 @@ from sqlalchemy import ForeignKey, String, Integer, Boolean, DateTime, func
 from datetime import datetime
 from enum import Enum
 from sqlalchemy import Enum as SAEnum
-from src.database.models.teams import Base
+from src.database.database import Base
 from sqlalchemy import Text
 
 

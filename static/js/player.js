@@ -1,7 +1,8 @@
 mountCommon('');
 
 const teamSlug = qs('team');
-const nickname = qs('nickname');
+const nickname =
+  window.location.pathname.split('/').filter(Boolean).pop() || qs('nickname');
 
 const titleNode = document.getElementById('player-title');
 const subtitleNode = document.getElementById('player-subtitle');

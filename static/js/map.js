@@ -1,7 +1,8 @@
 mountCommon('matches');
 
-const matchId = qs('match_id');
-const mapId = qs('map_id');
+const parts = window.location.pathname.split('/').filter(Boolean);
+const matchId = parts[1] || qs('match_id');
+const mapId = parts[3] || qs('map_id');
 const titleNode = document.getElementById('map-title');
 const subtitleNode = document.getElementById('map-subtitle');
 const summaryNode = document.getElementById('map-summary');

@@ -1,15 +1,13 @@
-const API_BASE = window.location.origin.includes('127.0.0.1') || window.location.origin.includes('localhost')
-  ? `${window.location.origin}/api`
-  : '/api';
+const API_BASE = '/api';
 
 const routes = {
-  home: 'index.html',
-  teams: 'teams.html',
-  matches: 'matches.html',
-  team: (slug) => `team.html?slug=${encodeURIComponent(slug)}`,
-  player: (teamSlug, nickname) => `player.html?team=${encodeURIComponent(teamSlug)}&nickname=${encodeURIComponent(nickname)}`,
-  match: (id) => `match.html?id=${encodeURIComponent(id)}`,
-  map: (matchId, mapId) => `map.html?match_id=${encodeURIComponent(matchId)}&map_id=${encodeURIComponent(mapId)}`
+  home: '/',
+  teams: '/teams',
+  matches: '/matches',
+  team: (slug) => `/teams/${encodeURIComponent(slug)}`,
+  player: (teamSlug, nickname) => `/players/${encodeURIComponent(nickname)}?team=${encodeURIComponent(teamSlug)}`,
+  match: (id) => `/matches/${encodeURIComponent(id)}`,
+  map: (matchId, mapId) => `/matches/${encodeURIComponent(matchId)}/maps/${encodeURIComponent(mapId)}`
 };
 
 async function fetchJson(path){
@@ -220,4 +218,6 @@ function cardMatch(match){
   `;
 }
 
-if (window.gsap && window.ScrollTrigger) { gsap.registerPlugin(ScrollTrigger); }
+if (window.gsap && window.ScrollTrigger) {
+  gsap.registerPlugin(ScrollTrigger);
+}
