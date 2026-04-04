@@ -4,12 +4,10 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from src.database.models.teams import Base
 from src.database.models.teams import Team
 from src.database.models.players import Player
 from src.database.models.matches import Match , MatchMap , PlayerStats
-from dotenv import load_dotenv
-from pathlib import Path
+from src.database.database import Base , settings
 import os
 
 
@@ -22,26 +20,8 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / '.env')
 
-
-DB_USER = os.getenv('DB_USER')
-DB_PASSWORD = os.getenv('DB_PASSWORD')
-DB_HOST = os.getenv('DB_HOST')
-DB_PORT = os.getenv('DB_PORT')
-DB_NAME = os.getenv('DB_NAME')
-
-print("DB_USER =", os.getenv("DB_USER"))
-print("DB_PASSWORD =", os.getenv("DB_PASSWORD"))
-print("DB_HOST =", os.getenv("DB_HOST"))
-print("DB_PORT =", os.getenv("DB_PORT"))
-print("DB_NAME =", os.getenv("DB_NAME"))
-
-
-DATABASE_URL = f'postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-
-config.set_main_option('sqlalchemy.url' , DATABASE_URL)
+config.set_main_option('sqlalchemy.url' , settings.DATABASE_URL.replace('+asyncpg',''))
 
 
 

@@ -13,4 +13,6 @@ wheels/
 .env
 .env.app.docker
 .env.dockerdump.sql
+
+# Bump
 data_only.sql
