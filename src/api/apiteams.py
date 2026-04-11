@@ -13,9 +13,9 @@ router = APIRouter()
 
 @router.get('/teams')
 async def get_teams(ses: SessionDep):
-    result = await ses.execute(select(Team))
+    result = await ses.execute(select(Team).where(Team.is_active == True))
     teams = result.scalars().all()
-    return [
+    return [    
         {'name' : team.name,
          'slug' : team.slug,
          'country_code' : team.country_code,
